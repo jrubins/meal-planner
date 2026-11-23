@@ -1,0 +1,1298 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.Dinner",
+    "label": "Create table \"Dinner\"",
+    "summary": "Creates table \"Dinner\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Dinner"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Dinner\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Dinner\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"Dinner\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Dinner\"",
+        "sql": "CREATE TABLE \"public\".\"Dinner\" (\n  \"createdAt\" timestamptz(3) DEFAULT (now()) NOT NULL,\n  \"date\" date NOT NULL,\n  \"householdId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"mealId\" int4,\n  \"note\" text,\n  \"updatedAt\" timestamptz(3) NOT NULL,\n  \"updatedByUserId\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Dinner\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"public\".\"Dinner\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"Dinner\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.DinnerOption",
+    "label": "Create table \"DinnerOption\"",
+    "summary": "Creates table \"DinnerOption\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "DinnerOption"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"DinnerOption\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"DinnerOption\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"DinnerOption\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"DinnerOption\"",
+        "sql": "CREATE TABLE \"public\".\"DinnerOption\" (\n  \"createdAt\" timestamptz(3) DEFAULT (now()) NOT NULL,\n  \"date\" date NOT NULL,\n  \"householdId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"mealId\" int4 NOT NULL,\n  \"proposedByUserId\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"DinnerOption\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"public\".\"DinnerOption\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"DinnerOption\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.Household",
+    "label": "Create table \"Household\"",
+    "summary": "Creates table \"Household\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Household"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Household\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Household\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"Household\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Household\"",
+        "sql": "CREATE TABLE \"public\".\"Household\" (\n  \"createdAt\" timestamptz(3) DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"inviteCode\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"timeZone\" text DEFAULT 'UTC' NOT NULL,\n  \"updatedAt\" timestamptz(3) NOT NULL,\n  \"weekStartsOn\" int4 DEFAULT 1 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Household\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"public\".\"Household\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"Household\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.HouseholdMember",
+    "label": "Create table \"HouseholdMember\"",
+    "summary": "Creates table \"HouseholdMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "HouseholdMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"HouseholdMember\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"HouseholdMember\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"HouseholdMember\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"HouseholdMember\"",
+        "sql": "CREATE TABLE \"public\".\"HouseholdMember\" (\n  \"createdAt\" timestamptz(3) DEFAULT (now()) NOT NULL,\n  \"displayName\" text,\n  \"householdId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"userId\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"HouseholdMember\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"public\".\"HouseholdMember\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"HouseholdMember\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.Meal",
+    "label": "Create table \"Meal\"",
+    "summary": "Creates table \"Meal\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Meal"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Meal\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Meal\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"Meal\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Meal\"",
+        "sql": "CREATE TABLE \"public\".\"Meal\" (\n  \"createdAt\" timestamptz(3) DEFAULT (now()) NOT NULL,\n  \"createdByUserId\" text NOT NULL,\n  \"description\" text,\n  \"householdId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"recipeUrl\" text,\n  \"tags\" text[] NOT NULL,\n  \"updatedAt\" timestamptz(3) NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"Meal_tags_elem_not_null_aecbe9e2\" CHECK (array_position(\"tags\", NULL) IS NULL)\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Meal\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"public\".\"Meal\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"Meal\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.MealPhoto",
+    "label": "Create table \"MealPhoto\"",
+    "summary": "Creates table \"MealPhoto\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "MealPhoto"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"MealPhoto\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MealPhoto\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"MealPhoto\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"MealPhoto\"",
+        "sql": "CREATE TABLE \"public\".\"MealPhoto\" (\n  \"contentType\" text NOT NULL,\n  \"createdAt\" timestamptz(3) DEFAULT (now()) NOT NULL,\n  \"data\" bytea NOT NULL,\n  \"householdId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"mealId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"MealPhoto\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"public\".\"MealPhoto\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"MealPhoto\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.OptionVote",
+    "label": "Create table \"OptionVote\"",
+    "summary": "Creates table \"OptionVote\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "OptionVote"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"OptionVote\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"OptionVote\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"OptionVote\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"OptionVote\"",
+        "sql": "CREATE TABLE \"public\".\"OptionVote\" (\n  \"createdAt\" timestamptz(3) DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"optionId\" int4 NOT NULL,\n  \"updatedAt\" timestamptz(3) NOT NULL,\n  \"userId\" text NOT NULL,\n  \"value\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"OptionVote\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"public\".\"OptionVote\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"OptionVote\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "unique.Dinner.Dinner_householdId_date_key",
+    "label": "Add unique constraint on \"Dinner\" (householdId, date)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Dinner_householdId_date_key",
+        "table": "Dinner"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Dinner_householdId_date_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Dinner_householdId_date_key",
+          "public",
+          "\"public\".\"Dinner\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"Dinner_householdId_date_key\" on \"Dinner\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Dinner_householdId_date_key\"",
+        "sql": "ALTER TABLE \"public\".\"Dinner\" ADD CONSTRAINT \"Dinner_householdId_date_key\" UNIQUE (\"householdId\", \"date\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"Dinner_householdId_date_key\" exists on (householdId, date)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "Dinner_householdId_date_key",
+          "public",
+          "\"public\".\"Dinner\"",
+          "u",
+          "[\"householdId\",\"date\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.DinnerOption.DinnerOption_householdId_date_mealId_key",
+    "label": "Add unique constraint on \"DinnerOption\" (householdId, date, mealId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "DinnerOption_householdId_date_mealId_key",
+        "table": "DinnerOption"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"DinnerOption_householdId_date_mealId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "DinnerOption_householdId_date_mealId_key",
+          "public",
+          "\"public\".\"DinnerOption\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"DinnerOption_householdId_date_mealId_key\" on \"DinnerOption\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"DinnerOption_householdId_date_mealId_key\"",
+        "sql": "ALTER TABLE \"public\".\"DinnerOption\" ADD CONSTRAINT \"DinnerOption_householdId_date_mealId_key\" UNIQUE (\"householdId\", \"date\", \"mealId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"DinnerOption_householdId_date_mealId_key\" exists on (householdId, date, mealId)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "DinnerOption_householdId_date_mealId_key",
+          "public",
+          "\"public\".\"DinnerOption\"",
+          "u",
+          "[\"householdId\",\"date\",\"mealId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.Household.Household_inviteCode_key",
+    "label": "Add unique constraint on \"Household\" (inviteCode)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Household_inviteCode_key",
+        "table": "Household"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Household_inviteCode_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Household_inviteCode_key",
+          "public",
+          "\"public\".\"Household\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"Household_inviteCode_key\" on \"Household\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Household_inviteCode_key\"",
+        "sql": "ALTER TABLE \"public\".\"Household\" ADD CONSTRAINT \"Household_inviteCode_key\" UNIQUE (\"inviteCode\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"Household_inviteCode_key\" exists on (inviteCode)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "Household_inviteCode_key",
+          "public",
+          "\"public\".\"Household\"",
+          "u",
+          "[\"inviteCode\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.HouseholdMember.HouseholdMember_userId_key",
+    "label": "Add unique constraint on \"HouseholdMember\" (userId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "HouseholdMember_userId_key",
+        "table": "HouseholdMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"HouseholdMember_userId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "HouseholdMember_userId_key",
+          "public",
+          "\"public\".\"HouseholdMember\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"HouseholdMember_userId_key\" on \"HouseholdMember\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"HouseholdMember_userId_key\"",
+        "sql": "ALTER TABLE \"public\".\"HouseholdMember\" ADD CONSTRAINT \"HouseholdMember_userId_key\" UNIQUE (\"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"HouseholdMember_userId_key\" exists on (userId)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "HouseholdMember_userId_key",
+          "public",
+          "\"public\".\"HouseholdMember\"",
+          "u",
+          "[\"userId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.OptionVote.OptionVote_optionId_userId_key",
+    "label": "Add unique constraint on \"OptionVote\" (optionId, userId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "OptionVote_optionId_userId_key",
+        "table": "OptionVote"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"OptionVote_optionId_userId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "OptionVote_optionId_userId_key",
+          "public",
+          "\"public\".\"OptionVote\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"OptionVote_optionId_userId_key\" on \"OptionVote\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"OptionVote_optionId_userId_key\"",
+        "sql": "ALTER TABLE \"public\".\"OptionVote\" ADD CONSTRAINT \"OptionVote_optionId_userId_key\" UNIQUE (\"optionId\", \"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"OptionVote_optionId_userId_key\" exists on (optionId, userId)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "OptionVote_optionId_userId_key",
+          "public",
+          "\"public\".\"OptionVote\"",
+          "u",
+          "[\"optionId\",\"userId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Dinner.Dinner_mealId_idx_12b177d9",
+    "label": "Create index \"Dinner_mealId_idx_12b177d9\" on \"Dinner\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Dinner_mealId_idx_12b177d9",
+        "table": "Dinner"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Dinner_mealId_idx_12b177d9\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Dinner_mealId_idx_12b177d9\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"Dinner_mealId_idx_12b177d9\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Dinner_mealId_idx_12b177d9\"",
+        "sql": "CREATE INDEX \"Dinner_mealId_idx_12b177d9\" ON \"public\".\"Dinner\" (\"mealId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Dinner_mealId_idx_12b177d9\" exists on \"Dinner\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"Dinner_mealId_idx_12b177d9\"",
+          "i",
+          "I",
+          "\"public\".\"Dinner\"",
+          "btree",
+          "[\"mealId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.DinnerOption.DinnerOption_mealId_idx_12b177d9",
+    "label": "Create index \"DinnerOption_mealId_idx_12b177d9\" on \"DinnerOption\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "DinnerOption_mealId_idx_12b177d9",
+        "table": "DinnerOption"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"DinnerOption_mealId_idx_12b177d9\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"DinnerOption_mealId_idx_12b177d9\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"DinnerOption_mealId_idx_12b177d9\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"DinnerOption_mealId_idx_12b177d9\"",
+        "sql": "CREATE INDEX \"DinnerOption_mealId_idx_12b177d9\" ON \"public\".\"DinnerOption\" (\"mealId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"DinnerOption_mealId_idx_12b177d9\" exists on \"DinnerOption\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"DinnerOption_mealId_idx_12b177d9\"",
+          "i",
+          "I",
+          "\"public\".\"DinnerOption\"",
+          "btree",
+          "[\"mealId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.HouseholdMember.HouseholdMember_householdId_idx_fb33d798",
+    "label": "Create index \"HouseholdMember_householdId_idx_fb33d798\" on \"HouseholdMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "HouseholdMember_householdId_idx_fb33d798",
+        "table": "HouseholdMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"HouseholdMember_householdId_idx_fb33d798\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"HouseholdMember_householdId_idx_fb33d798\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"HouseholdMember_householdId_idx_fb33d798\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"HouseholdMember_householdId_idx_fb33d798\"",
+        "sql": "CREATE INDEX \"HouseholdMember_householdId_idx_fb33d798\" ON \"public\".\"HouseholdMember\" (\"householdId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"HouseholdMember_householdId_idx_fb33d798\" exists on \"HouseholdMember\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"HouseholdMember_householdId_idx_fb33d798\"",
+          "i",
+          "I",
+          "\"public\".\"HouseholdMember\"",
+          "btree",
+          "[\"householdId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Meal.Meal_householdId_createdAt_idx_6b6c436d",
+    "label": "Create index \"Meal_householdId_createdAt_idx_6b6c436d\" on \"Meal\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Meal_householdId_createdAt_idx_6b6c436d",
+        "table": "Meal"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Meal_householdId_createdAt_idx_6b6c436d\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Meal_householdId_createdAt_idx_6b6c436d\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"Meal_householdId_createdAt_idx_6b6c436d\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Meal_householdId_createdAt_idx_6b6c436d\"",
+        "sql": "CREATE INDEX \"Meal_householdId_createdAt_idx_6b6c436d\" ON \"public\".\"Meal\" (\"householdId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Meal_householdId_createdAt_idx_6b6c436d\" exists on \"Meal\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"Meal_householdId_createdAt_idx_6b6c436d\"",
+          "i",
+          "I",
+          "\"public\".\"Meal\"",
+          "btree",
+          "[\"householdId\",\"createdAt\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Meal.Meal_householdId_idx_fb33d798",
+    "label": "Create index \"Meal_householdId_idx_fb33d798\" on \"Meal\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Meal_householdId_idx_fb33d798",
+        "table": "Meal"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Meal_householdId_idx_fb33d798\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Meal_householdId_idx_fb33d798\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"Meal_householdId_idx_fb33d798\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Meal_householdId_idx_fb33d798\"",
+        "sql": "CREATE INDEX \"Meal_householdId_idx_fb33d798\" ON \"public\".\"Meal\" (\"householdId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Meal_householdId_idx_fb33d798\" exists on \"Meal\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"Meal_householdId_idx_fb33d798\"",
+          "i",
+          "I",
+          "\"public\".\"Meal\"",
+          "btree",
+          "[\"householdId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.MealPhoto.MealPhoto_mealId_createdAt_idx_1052d642",
+    "label": "Create index \"MealPhoto_mealId_createdAt_idx_1052d642\" on \"MealPhoto\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "MealPhoto_mealId_createdAt_idx_1052d642",
+        "table": "MealPhoto"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"MealPhoto_mealId_createdAt_idx_1052d642\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MealPhoto_mealId_createdAt_idx_1052d642\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"MealPhoto_mealId_createdAt_idx_1052d642\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"MealPhoto_mealId_createdAt_idx_1052d642\"",
+        "sql": "CREATE INDEX \"MealPhoto_mealId_createdAt_idx_1052d642\" ON \"public\".\"MealPhoto\" (\"mealId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"MealPhoto_mealId_createdAt_idx_1052d642\" exists on \"MealPhoto\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"MealPhoto_mealId_createdAt_idx_1052d642\"",
+          "i",
+          "I",
+          "\"public\".\"MealPhoto\"",
+          "btree",
+          "[\"mealId\",\"createdAt\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.MealPhoto.MealPhoto_mealId_idx_12b177d9",
+    "label": "Create index \"MealPhoto_mealId_idx_12b177d9\" on \"MealPhoto\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "MealPhoto_mealId_idx_12b177d9",
+        "table": "MealPhoto"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"MealPhoto_mealId_idx_12b177d9\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MealPhoto_mealId_idx_12b177d9\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"MealPhoto_mealId_idx_12b177d9\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"MealPhoto_mealId_idx_12b177d9\"",
+        "sql": "CREATE INDEX \"MealPhoto_mealId_idx_12b177d9\" ON \"public\".\"MealPhoto\" (\"mealId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"MealPhoto_mealId_idx_12b177d9\" exists on \"MealPhoto\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"MealPhoto_mealId_idx_12b177d9\"",
+          "i",
+          "I",
+          "\"public\".\"MealPhoto\"",
+          "btree",
+          "[\"mealId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.OptionVote.OptionVote_optionId_idx_b1d5fce5",
+    "label": "Create index \"OptionVote_optionId_idx_b1d5fce5\" on \"OptionVote\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "OptionVote_optionId_idx_b1d5fce5",
+        "table": "OptionVote"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"OptionVote_optionId_idx_b1d5fce5\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"OptionVote_optionId_idx_b1d5fce5\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"OptionVote_optionId_idx_b1d5fce5\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"OptionVote_optionId_idx_b1d5fce5\"",
+        "sql": "CREATE INDEX \"OptionVote_optionId_idx_b1d5fce5\" ON \"public\".\"OptionVote\" (\"optionId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"OptionVote_optionId_idx_b1d5fce5\" exists on \"OptionVote\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"public\".\"OptionVote_optionId_idx_b1d5fce5\"",
+          "i",
+          "I",
+          "\"public\".\"OptionVote\"",
+          "btree",
+          "[\"optionId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Dinner.Dinner_mealId_fkey",
+    "label": "Add foreign key \"Dinner_mealId_fkey\" on \"Dinner\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Dinner_mealId_fkey",
+        "table": "Dinner"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Dinner_mealId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Dinner_mealId_fkey",
+          "public",
+          "\"public\".\"Dinner\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"Dinner_mealId_fkey\" on \"Dinner\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Dinner_mealId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Dinner\"\nADD CONSTRAINT \"Dinner_mealId_fkey\"\nFOREIGN KEY (\"mealId\")\nREFERENCES \"public\".\"Meal\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Dinner_mealId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "Dinner_mealId_fkey",
+          "public",
+          "\"public\".\"Dinner\"",
+          "f",
+          "[\"mealId\"]",
+          "\"public\".\"Meal\"",
+          "[\"id\"]",
+          "n",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.DinnerOption.DinnerOption_mealId_fkey",
+    "label": "Add foreign key \"DinnerOption_mealId_fkey\" on \"DinnerOption\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "DinnerOption_mealId_fkey",
+        "table": "DinnerOption"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"DinnerOption_mealId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "DinnerOption_mealId_fkey",
+          "public",
+          "\"public\".\"DinnerOption\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"DinnerOption_mealId_fkey\" on \"DinnerOption\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"DinnerOption_mealId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"DinnerOption\"\nADD CONSTRAINT \"DinnerOption_mealId_fkey\"\nFOREIGN KEY (\"mealId\")\nREFERENCES \"public\".\"Meal\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"DinnerOption_mealId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "DinnerOption_mealId_fkey",
+          "public",
+          "\"public\".\"DinnerOption\"",
+          "f",
+          "[\"mealId\"]",
+          "\"public\".\"Meal\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.HouseholdMember.HouseholdMember_householdId_fkey",
+    "label": "Add foreign key \"HouseholdMember_householdId_fkey\" on \"HouseholdMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "HouseholdMember_householdId_fkey",
+        "table": "HouseholdMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"HouseholdMember_householdId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "HouseholdMember_householdId_fkey",
+          "public",
+          "\"public\".\"HouseholdMember\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"HouseholdMember_householdId_fkey\" on \"HouseholdMember\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"HouseholdMember_householdId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"HouseholdMember\"\nADD CONSTRAINT \"HouseholdMember_householdId_fkey\"\nFOREIGN KEY (\"householdId\")\nREFERENCES \"public\".\"Household\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"HouseholdMember_householdId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "HouseholdMember_householdId_fkey",
+          "public",
+          "\"public\".\"HouseholdMember\"",
+          "f",
+          "[\"householdId\"]",
+          "\"public\".\"Household\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Meal.Meal_householdId_fkey",
+    "label": "Add foreign key \"Meal_householdId_fkey\" on \"Meal\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Meal_householdId_fkey",
+        "table": "Meal"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Meal_householdId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Meal_householdId_fkey",
+          "public",
+          "\"public\".\"Meal\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"Meal_householdId_fkey\" on \"Meal\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Meal_householdId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Meal\"\nADD CONSTRAINT \"Meal_householdId_fkey\"\nFOREIGN KEY (\"householdId\")\nREFERENCES \"public\".\"Household\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Meal_householdId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "Meal_householdId_fkey",
+          "public",
+          "\"public\".\"Meal\"",
+          "f",
+          "[\"householdId\"]",
+          "\"public\".\"Household\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.MealPhoto.MealPhoto_mealId_fkey",
+    "label": "Add foreign key \"MealPhoto_mealId_fkey\" on \"MealPhoto\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "MealPhoto_mealId_fkey",
+        "table": "MealPhoto"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"MealPhoto_mealId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "MealPhoto_mealId_fkey",
+          "public",
+          "\"public\".\"MealPhoto\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"MealPhoto_mealId_fkey\" on \"MealPhoto\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"MealPhoto_mealId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"MealPhoto\"\nADD CONSTRAINT \"MealPhoto_mealId_fkey\"\nFOREIGN KEY (\"mealId\")\nREFERENCES \"public\".\"Meal\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"MealPhoto_mealId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "MealPhoto_mealId_fkey",
+          "public",
+          "\"public\".\"MealPhoto\"",
+          "f",
+          "[\"mealId\"]",
+          "\"public\".\"Meal\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.OptionVote.OptionVote_optionId_fkey",
+    "label": "Add foreign key \"OptionVote_optionId_fkey\" on \"OptionVote\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "OptionVote_optionId_fkey",
+        "table": "OptionVote"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"OptionVote_optionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "OptionVote_optionId_fkey",
+          "public",
+          "\"public\".\"OptionVote\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"OptionVote_optionId_fkey\" on \"OptionVote\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"OptionVote_optionId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"OptionVote\"\nADD CONSTRAINT \"OptionVote_optionId_fkey\"\nFOREIGN KEY (\"optionId\")\nREFERENCES \"public\".\"DinnerOption\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"OptionVote_optionId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "OptionVote_optionId_fkey",
+          "public",
+          "\"public\".\"OptionVote\"",
+          "f",
+          "[\"optionId\"]",
+          "\"public\".\"DinnerOption\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  }
+]
