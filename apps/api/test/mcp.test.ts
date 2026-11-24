@@ -1,7 +1,7 @@
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
-import { ApiErrorSchema, ItemSchema } from '@app/shared';
+import { ApiErrorSchema, MealSchema, NightSchema, WeekSchema } from '@app/shared';
 import express from 'express';
 import { pino } from 'pino';
 import { pinoHttp } from 'pino-http';
@@ -39,28 +39,127 @@ async function connect(userId: string): Promise<Client> {
 }
 
 describe('MCP endpoint', () => {
-  it('lists the tools', async () => {
+  it('lists the tools, with instructions for the assistant', async () => {
     const client = await connect(uniqueUserId());
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name)).toEqual(
-      expect.arrayContaining(['list_items', 'add_item', 'delete_item']),
+      expect.arrayContaining([
+        'get_household',
+        'get_week',
+        'plan_dinner',
+        'propose_options',
+        'vote_on_option',
+        'choose_option',
+        'suggest_meals',
+        'shuffle_week',
+        'list_meals',
+        'create_meal',
+      ]),
     );
+    expect(client.getInstructions()).toContain('YYYY-MM-DD');
     await client.close();
   });
 
-  it("acts as the signed-in user, on that user's data only", async () => {
+  it('plans a week in chat: create meals, propose options, vote, choose', async () => {
+    const client = await connect(uniqueUserId());
+    const tacos = unique('Tacos');
+    const pasta = unique('Pasta');
+    MealSchema.parse(
+      (await client.callTool({ name: 'create_meal', arguments: { name: tacos } }))
+        .structuredContent,
+    );
+    const pastaMeal = MealSchema.parse(
+      (await client.callTool({ name: 'create_meal', arguments: { name: pasta, tags: ['Quick'] } }))
+        .structuredContent,
+    );
+    expect(pastaMeal.tags).toEqual(['quick']);
+
+    const week = WeekSchema.parse(
+      (await client.callTool({ name: 'get_week', arguments: {} })).structuredContent,
+    );
+    const date = week.nights[2]?.date ?? week.start;
+
+    // Names work as well as IDs, ignoring case.
+    const proposed = NightSchema.parse(
+      (
+        await client.callTool({
+          name: 'propose_options',
+          arguments: { date, mealNames: [tacos.toUpperCase()], mealIds: [pastaMeal.id] },
+        })
+      ).structuredContent,
+    );
+    expect(proposed.options.map((o) => o.meal.name).sort()).toEqual([pasta, tacos].sort());
+
+    const option = proposed.options.find((o) => o.meal.id === pastaMeal.id);
+    if (!option) throw new Error('expected an option');
+    const voted = NightSchema.parse(
+      (
+        await client.callTool({
+          name: 'vote_on_option',
+          arguments: { optionId: option.id, vote: 'up' },
+        })
+      ).structuredContent,
+    );
+    expect(voted.options.find((o) => o.id === option.id)?.votes.map((v) => v.value)).toEqual([
+      'up',
+    ]);
+
+    const chosen = NightSchema.parse(
+      (await client.callTool({ name: 'choose_option', arguments: { optionId: option.id } }))
+        .structuredContent,
+    );
+    expect(chosen.dinner?.meal?.name).toBe(pasta);
+    expect(chosen.options.find((o) => o.id === option.id)?.chosen).toBe(true);
+    await client.close();
+  });
+
+  it('plans a dinner by name or as a note, and explains an unknown meal', async () => {
+    const client = await connect(uniqueUserId());
+    const name = unique('Curry');
+    await client.callTool({ name: 'create_meal', arguments: { name } });
+
+    const night = NightSchema.parse(
+      (
+        await client.callTool({
+          name: 'plan_dinner',
+          arguments: { date: '2026-06-01', mealName: name },
+        })
+      ).structuredContent,
+    );
+    expect(night.dinner?.meal?.name).toBe(name);
+
+    const note = NightSchema.parse(
+      (
+        await client.callTool({
+          name: 'plan_dinner',
+          arguments: { date: '2026-06-02', note: 'Eating out' },
+        })
+      ).structuredContent,
+    );
+    expect(note.dinner).toEqual({ date: '2026-06-02', meal: null, note: 'Eating out' });
+
+    const missing = await client.callTool({
+      name: 'plan_dinner',
+      arguments: { date: '2026-06-03', mealName: unique('Nope') },
+    });
+    expect(missing.isError).toBe(true);
+    expect(JSON.stringify(missing.content)).toContain('create_meal');
+    await client.close();
+  });
+
+  it("acts as the signed-in user, on that user's household only", async () => {
     const alice = await connect(uniqueUserId());
     const bob = await connect(uniqueUserId());
     const name = unique('Squat');
 
-    const added = await alice.callTool({ name: 'add_item', arguments: { name } });
-    const item = ItemSchema.parse(added.structuredContent);
+    const added = await alice.callTool({ name: 'create_meal', arguments: { name } });
+    const meal = MealSchema.parse(added.structuredContent);
 
-    const ItemList = z.object({ items: ItemSchema.array() });
-    const aliceList = await alice.callTool({ name: 'list_items', arguments: {} });
-    expect(ItemList.parse(aliceList.structuredContent).items).toContainEqual(item);
-    const bobList = await bob.callTool({ name: 'list_items', arguments: {} });
-    expect(ItemList.parse(bobList.structuredContent).items.map((i) => i.id)).not.toContain(item.id);
+    const MealList = z.object({ meals: MealSchema.array() });
+    const aliceList = await alice.callTool({ name: 'list_meals', arguments: {} });
+    expect(MealList.parse(aliceList.structuredContent).meals.map((m) => m.id)).toContain(meal.id);
+    const bobList = await bob.callTool({ name: 'list_meals', arguments: {} });
+    expect(MealList.parse(bobList.structuredContent).meals.map((m) => m.id)).not.toContain(meal.id);
 
     await alice.close();
     await bob.close();
@@ -68,7 +167,7 @@ describe('MCP endpoint', () => {
 
   it('reports invalid tool input as an error result', async () => {
     const client = await connect(uniqueUserId());
-    const result = await client.callTool({ name: 'add_item', arguments: { name: '' } });
+    const result = await client.callTool({ name: 'create_meal', arguments: { name: '' } });
     expect(result.isError).toBe(true);
     await client.close();
   });

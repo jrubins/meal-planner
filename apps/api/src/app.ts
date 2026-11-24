@@ -15,9 +15,14 @@ import { devAuthRouter } from './features/auth/dev-auth.routes.ts';
 import { sessionRouter } from './features/auth/session.routes.ts';
 import { healthRouter } from './features/health/health.routes.ts';
 import { createHealthService } from './features/health/health.service.ts';
-import { createItemsService } from './features/items/items.service.ts';
-import { itemsRouter } from './features/items/items.routes.ts';
+import { householdRouter } from './features/household/household.routes.ts';
+import { createHouseholdService } from './features/household/household.service.ts';
+import { mealsRouter } from './features/meals/meals.routes.ts';
+import { createMealsService } from './features/meals/meals.service.ts';
+import { createPostgresPhotoStore } from './features/meals/photo-store.ts';
 import { mcpHandlers, mcpMetadataRouter } from './features/mcp/mcp.routes.ts';
+import { planRouter } from './features/plan/plan.routes.ts';
+import { createPlanService } from './features/plan/plan.service.ts';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.ts';
 
 export interface AppDeps {
@@ -72,7 +77,10 @@ export function createApp({
   });
   // The web app's own origin, plus any configured for cross-origin API clients.
   const trustedOrigins = [...new Set([new URL(config.WEB_URL).origin, ...config.CORS_ORIGINS])];
-  const services = { items: createItemsService(db) };
+  const households = createHouseholdService(db);
+  // Photos live in Postgres; swap in another PhotoStore to move them to blob storage.
+  const meals = createMealsService(db, households, createPostgresPhotoStore(db));
+  const services = { households, meals, plan: createPlanService(db, households, meals) };
 
   app.disable('x-powered-by');
   app.set('trust proxy', true);
@@ -128,7 +136,9 @@ export function createApp({
       trustedOrigins,
     }),
   );
-  app.use('/items', itemsRouter(services.items));
+  app.use('/household', householdRouter(services.households));
+  app.use('/meals', mealsRouter(services.meals, services.plan));
+  app.use('/plan', planRouter(services.plan));
 
   app.use(notFoundHandler);
   // Reports 5xx errors to Sentry (no-op while Sentry is disabled), then our JSON error handler.
