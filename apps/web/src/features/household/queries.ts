@@ -25,8 +25,10 @@ function useHouseholdMutation<T>(path: string, method: string) {
   });
 }
 
-export const useUpdateHousehold = () => useHouseholdMutation<UpdateHousehold>('/household', 'PATCH');
+export const useUpdateHousehold = () =>
+  useHouseholdMutation<UpdateHousehold>('/household', 'PATCH');
 export const useUpdateMe = () => useHouseholdMutation<UpdateMember>('/household/me', 'PATCH');
-export const useJoinHousehold = () => useHouseholdMutation<JoinHousehold>('/household/join', 'POST');
+export const useJoinHousehold = () =>
+  useHouseholdMutation<JoinHousehold>('/household/join', 'POST');
 export const useNewInviteCode = () =>
   useHouseholdMutation<undefined>('/household/invite-code', 'POST');

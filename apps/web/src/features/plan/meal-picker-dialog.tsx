@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MealThumb } from '@/features/meals/meal-thumb';
-import { lastEaten } from '@/lib/format';
+import { lastHad } from '@/lib/format';
 
 export type PickerMode = 'dinner' | 'options';
 
@@ -155,7 +155,7 @@ export function MealPickerDialog({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{meal.name}</span>
                     <span className="text-muted-foreground block text-xs">
-                      {proposed ? 'Already an option' : `Last had ${lastEaten(meal.lastEatenOn, today)}`}
+                      {proposed ? 'Already an option' : lastHad(meal.lastEatenOn, today)}
                     </span>
                   </span>
                   {isSelected ? <Check className="size-4" aria-hidden /> : null}

@@ -16,7 +16,7 @@ export const weekQueryOptions = (date?: string) =>
   });
 
 /** Every plan change can affect any week view (and meals' "last eaten"), so refresh them. */
-function usePlanMutation<T>(request: (input: T) => Promise<unknown>) {
+function usePlanMutation<T, R>(request: (input: T) => Promise<R>) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: request,

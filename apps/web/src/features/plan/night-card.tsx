@@ -3,7 +3,7 @@ import { cn } from 'cn';
 import { ListPlus, Shuffle, Sparkles, UtensilsCrossed, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MealThumb } from '@/features/meals/meal-thumb';
-import { lastEaten, monthDay, weekdayName } from '@/lib/format';
+import { lastHad, monthDay, weekdayName } from '@/lib/format';
 import { OptionRow } from './option-row';
 
 export interface NightActions {
@@ -29,14 +29,7 @@ interface NightCardProps extends NightActions {
 }
 
 /** One night of the week: its dinner, the options being voted on, and ways to plan it. */
-export function NightCard({
-  night,
-  today,
-  me,
-  members,
-  suggestion,
-  ...actions
-}: NightCardProps) {
+export function NightCard({ night, today, me, members, suggestion, ...actions }: NightCardProps) {
   const isToday = night.date === today;
   const isPast = night.date < today;
   const dinner = night.dinner;
@@ -75,7 +68,9 @@ export function NightCard({
             {dinner.note ? (
               <p
                 className={cn(
-                  dinner.meal ? 'text-muted-foreground text-sm' : 'text-lg font-semibold sm:text-xl',
+                  dinner.meal
+                    ? 'text-muted-foreground text-sm'
+                    : 'text-lg font-semibold sm:text-xl',
                 )}
               >
                 {dinner.note}
@@ -134,7 +129,7 @@ export function NightCard({
                 <p className="text-muted-foreground text-xs">How about…</p>
                 <p className="truncate font-semibold">{suggestion.meal.name}</p>
                 <p className="text-muted-foreground text-xs">
-                  Last had {lastEaten(suggestion.lastEatenOn, today)}
+                  {lastHad(suggestion.lastEatenOn, today)}
                 </p>
               </div>
               <div className="flex flex-wrap gap-1">

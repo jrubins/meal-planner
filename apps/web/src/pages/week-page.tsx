@@ -89,10 +89,10 @@ export function WeekPage({ date }: WeekPageProps) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-muted-foreground text-sm">{weekRange(week.start, week.end)}</p>
-          <h1 className="text-3xl font-semibold">{isThisWeek ? 'This week' : 'Week of ' + monthDay(week.start)}</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {planned} of 7 dinners planned
-          </p>
+          <h1 className="text-3xl font-semibold">
+            {isThisWeek ? 'This week' : 'Week of ' + monthDay(week.start)}
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">{planned} of 7 dinners planned</p>
         </div>
         <nav aria-label="Weeks" className="flex items-center gap-1">
           <Button variant="outline" size="icon" asChild>
@@ -118,14 +118,10 @@ export function WeekPage({ date }: WeekPageProps) {
       {emptyNights > 0 ? (
         <div className="bg-secondary/70 flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3">
           <p className="text-sm">
-            {emptyNights === 1 ? '1 night has' : `${emptyNights} nights have`} nothing planned.
-            Need some inspiration?
+            {emptyNights === 1 ? '1 night has' : `${emptyNights} nights have`} nothing planned. Need
+            some inspiration?
           </p>
-          <Button
-            size="sm"
-            disabled={shuffleWeek.isPending}
-            onClick={() => void fillEmptyNights()}
-          >
+          <Button size="sm" disabled={shuffleWeek.isPending} onClick={() => void fillEmptyNights()}>
             <Sparkles />
             Fill empty nights
           </Button>
@@ -178,7 +174,11 @@ export function WeekPage({ date }: WeekPageProps) {
           today={week.today}
           proposedMealIds={pickerNight?.options.map((o) => o.meal.id)}
           onPickMeal={(mealId) =>
-            setDinner.mutateAsync({ date: picker.date, mealId, note: pickerNight?.dinner?.note ?? null })
+            setDinner.mutateAsync({
+              date: picker.date,
+              mealId,
+              note: pickerNight?.dinner?.note ?? null,
+            })
           }
           onPickNote={(note) => setDinner.mutateAsync({ date: picker.date, mealId: null, note })}
           onProposeMeals={(mealIds) => addOptions.mutateAsync({ date: picker.date, mealIds })}

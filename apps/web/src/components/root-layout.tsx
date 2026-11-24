@@ -19,9 +19,12 @@ export function RootLayout() {
       <header className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
         <Link to="/" search={{}} className="flex items-center gap-2">
           <img src="/favicon.svg" alt="" className="size-7" />
-          <span className="font-display text-lg font-semibold">Dinner Plan</span>
+          <span className="text-lg font-semibold tracking-tight">Dinner Plan</span>
         </Link>
-        <nav aria-label="Main" className="order-last flex w-full gap-1 text-sm sm:order-none sm:w-auto">
+        <nav
+          aria-label="Main"
+          className="order-last flex w-full gap-1 text-sm sm:order-none sm:w-auto"
+        >
           <Link to="/" search={{}} className={navLink} activeOptions={{ includeSearch: false }}>
             <CalendarDays className="size-4" aria-hidden />
             Week

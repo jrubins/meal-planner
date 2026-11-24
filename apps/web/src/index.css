@@ -79,7 +79,6 @@
   --color-chart-1: var(--chart-1);
   --color-vote-up: var(--vote-up);
   --color-vote-down: var(--vote-down);
-  --font-display: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
 }
 
 @layer base {
@@ -91,6 +90,6 @@
   }
   h1,
   h2 {
-    font-family: var(--font-display);
+    letter-spacing: -0.015em;
   }
 }

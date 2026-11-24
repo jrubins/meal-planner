@@ -41,3 +41,8 @@ export function memberName(
 ): string {
   return member.displayName ?? (member.userId === me ? 'You' : 'Partner');
 }
+
+/** "Last had 3 days ago", or "Not had yet". */
+export function lastHad(date: string | null, today: string): string {
+  return date ? `Last had ${lastEaten(date, today)}` : 'Not had yet';
+}
