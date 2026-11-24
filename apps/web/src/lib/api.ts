@@ -28,7 +28,9 @@ export async function apiRequest<T extends z.ZodType | null>(
   init: RequestInit = {},
 ): Promise<T extends z.ZodType ? z.infer<T> : void> {
   const headers = new Headers(init.headers);
-  if (init.body !== undefined) headers.set('content-type', 'application/json');
+  if (init.body !== undefined && !headers.has('content-type')) {
+    headers.set('content-type', 'application/json');
+  }
   // Same-origin (the API is served at /api), so the session cookie is sent automatically.
   const res = await fetch(`${env.apiUrl}${path}`, { ...init, headers, credentials: 'same-origin' });
 
@@ -43,4 +45,9 @@ export async function apiRequest<T extends z.ZodType | null>(
 
   if (schema === null) return undefined as never;
   return schema.parse(await res.json()) as never;
+}
+
+/** Browser URL of an image the API serves (e.g. a meal photo's `path`). */
+export function apiUrl(path: string): string {
+  return `${env.apiUrl}${path}`;
 }

@@ -46,7 +46,7 @@ export function mcpMetadataRouter(
         resource: resourceUrl,
         authorization_servers: [issuer],
         bearer_methods_supported: ['header'],
-        resource_name: 'MCP server',
+        resource_name: 'Meal planner',
       });
     },
   );

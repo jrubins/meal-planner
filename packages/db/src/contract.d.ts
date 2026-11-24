@@ -23,9 +23,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'d66c50f1ad3d9edd716db2f69f1e229877832c8c35121487a8f8e43df1253466'>;
+  StorageHashBase<'fe894037f89a81637dba4ffc0c9bff8e147b454c4d8a382e8aff602d5a2f99cb'>;
 export type ExecutionHash =
-  ExecutionHashBase<'d388457b28c2848c8802c3f452f18b5904772d0acccd84bc3c8e1aa5e02d2104'>;
+  ExecutionHashBase<'167c022c16f97340aaa8aafd1d91434c1f662492b5aabc3baac56449a88f756d'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -309,19 +309,97 @@ export type StorageColumnInputTypes = ColumnTypesFromStorage<
 >;
 
 export namespace Models {
-  export type public_Item = {
-    createdAt: FieldOutputTypes['public']['Item']['createdAt'];
-    id: FieldOutputTypes['public']['Item']['id'];
-    name: FieldOutputTypes['public']['Item']['name'];
-    updatedAt: FieldOutputTypes['public']['Item']['updatedAt'];
-    userId: FieldOutputTypes['public']['Item']['userId'];
-    readonly [RelationKeys]?: never;
+  export type public_Dinner = {
+    createdAt: FieldOutputTypes['public']['Dinner']['createdAt'];
+    date: FieldOutputTypes['public']['Dinner']['date'];
+    householdId: FieldOutputTypes['public']['Dinner']['householdId'];
+    id: FieldOutputTypes['public']['Dinner']['id'];
+    mealId: FieldOutputTypes['public']['Dinner']['mealId'];
+    note: FieldOutputTypes['public']['Dinner']['note'];
+    updatedAt: FieldOutputTypes['public']['Dinner']['updatedAt'];
+    updatedByUserId: FieldOutputTypes['public']['Dinner']['updatedByUserId'];
+    meal: public_Meal | null;
+    readonly [RelationKeys]?: 'meal';
+  };
+  export type public_DinnerOption = {
+    createdAt: FieldOutputTypes['public']['DinnerOption']['createdAt'];
+    date: FieldOutputTypes['public']['DinnerOption']['date'];
+    householdId: FieldOutputTypes['public']['DinnerOption']['householdId'];
+    id: FieldOutputTypes['public']['DinnerOption']['id'];
+    mealId: FieldOutputTypes['public']['DinnerOption']['mealId'];
+    proposedByUserId: FieldOutputTypes['public']['DinnerOption']['proposedByUserId'];
+    meal: public_Meal;
+    votes: public_OptionVote[];
+    readonly [RelationKeys]?: 'meal' | 'votes';
+  };
+  export type public_Household = {
+    createdAt: FieldOutputTypes['public']['Household']['createdAt'];
+    id: FieldOutputTypes['public']['Household']['id'];
+    inviteCode: FieldOutputTypes['public']['Household']['inviteCode'];
+    name: FieldOutputTypes['public']['Household']['name'];
+    timeZone: FieldOutputTypes['public']['Household']['timeZone'];
+    updatedAt: FieldOutputTypes['public']['Household']['updatedAt'];
+    weekStartsOn: FieldOutputTypes['public']['Household']['weekStartsOn'];
+    meals: public_Meal[];
+    members: public_HouseholdMember[];
+    readonly [RelationKeys]?: 'meals' | 'members';
+  };
+  export type public_HouseholdMember = {
+    createdAt: FieldOutputTypes['public']['HouseholdMember']['createdAt'];
+    displayName: FieldOutputTypes['public']['HouseholdMember']['displayName'];
+    householdId: FieldOutputTypes['public']['HouseholdMember']['householdId'];
+    id: FieldOutputTypes['public']['HouseholdMember']['id'];
+    userId: FieldOutputTypes['public']['HouseholdMember']['userId'];
+    household: public_Household;
+    readonly [RelationKeys]?: 'household';
+  };
+  export type public_Meal = {
+    createdAt: FieldOutputTypes['public']['Meal']['createdAt'];
+    createdByUserId: FieldOutputTypes['public']['Meal']['createdByUserId'];
+    description: FieldOutputTypes['public']['Meal']['description'];
+    householdId: FieldOutputTypes['public']['Meal']['householdId'];
+    id: FieldOutputTypes['public']['Meal']['id'];
+    name: FieldOutputTypes['public']['Meal']['name'];
+    recipeUrl: FieldOutputTypes['public']['Meal']['recipeUrl'];
+    tags: FieldOutputTypes['public']['Meal']['tags'];
+    updatedAt: FieldOutputTypes['public']['Meal']['updatedAt'];
+    dinners: public_Dinner[];
+    household: public_Household;
+    options: public_DinnerOption[];
+    photos: public_MealPhoto[];
+    readonly [RelationKeys]?: 'dinners' | 'household' | 'options' | 'photos';
+  };
+  export type public_MealPhoto = {
+    contentType: FieldOutputTypes['public']['MealPhoto']['contentType'];
+    createdAt: FieldOutputTypes['public']['MealPhoto']['createdAt'];
+    data: FieldOutputTypes['public']['MealPhoto']['data'];
+    householdId: FieldOutputTypes['public']['MealPhoto']['householdId'];
+    id: FieldOutputTypes['public']['MealPhoto']['id'];
+    mealId: FieldOutputTypes['public']['MealPhoto']['mealId'];
+    meal: public_Meal;
+    readonly [RelationKeys]?: 'meal';
+  };
+  export type public_OptionVote = {
+    createdAt: FieldOutputTypes['public']['OptionVote']['createdAt'];
+    id: FieldOutputTypes['public']['OptionVote']['id'];
+    optionId: FieldOutputTypes['public']['OptionVote']['optionId'];
+    updatedAt: FieldOutputTypes['public']['OptionVote']['updatedAt'];
+    userId: FieldOutputTypes['public']['OptionVote']['userId'];
+    value: FieldOutputTypes['public']['OptionVote']['value'];
+    option: public_DinnerOption;
+    readonly [RelationKeys]?: 'option';
   };
 }
 
 export declare const models: {
   public: {
-    Item: Models.public_Item;
+    Dinner: Models.public_Dinner;
+    DinnerOption: Models.public_DinnerOption;
+    Household: Models.public_Household;
+    HouseholdMember: Models.public_HouseholdMember;
+    Meal: Models.public_Meal;
+    MealPhoto: Models.public_MealPhoto;
+    OptionVote: Models.public_OptionVote;
   };
 };
 
@@ -343,7 +421,160 @@ type ContractBase = Omit<
         readonly kind: 'postgres-schema';
         readonly entries: {
           readonly table: {
-            readonly Item: {
+            readonly Dinner: {
+              columns: {
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly date: {
+                  readonly dataType: 'pg/date';
+                  readonly codecId: 'pg/date-string@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly householdId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly mealId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly note: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly updatedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly updatedByUserId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['householdId', 'date'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'Dinner_mealId_idx_12b177d9';
+                  readonly prefix: 'Dinner_mealId_idx';
+                  readonly columns: readonly ['mealId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Dinner';
+                    readonly columns: readonly ['mealId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Meal';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly DinnerOption: {
+              columns: {
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly date: {
+                  readonly dataType: 'pg/date';
+                  readonly codecId: 'pg/date-string@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly householdId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly mealId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly proposedByUserId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['householdId', 'date', 'mealId'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'DinnerOption_mealId_idx_12b177d9';
+                  readonly prefix: 'DinnerOption_mealId_idx';
+                  readonly columns: readonly ['mealId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'DinnerOption';
+                    readonly columns: readonly ['mealId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Meal';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly Household: {
               columns: {
                 readonly createdAt: {
                   readonly dataType: 'pg/timestamptz';
@@ -363,9 +594,309 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
+                readonly inviteCode: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
                 readonly name: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly timeZone: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'UTC'>;
+                  };
+                  readonly many: false;
+                };
+                readonly updatedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly weekStartsOn: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 1>;
+                  };
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['inviteCode'] }];
+              indexes: readonly [];
+              foreignKeys: readonly [];
+            };
+            readonly HouseholdMember: {
+              columns: {
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly displayName: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly householdId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly userId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['userId'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'HouseholdMember_householdId_idx_fb33d798';
+                  readonly prefix: 'HouseholdMember_householdId_idx';
+                  readonly columns: readonly ['householdId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'HouseholdMember';
+                    readonly columns: readonly ['householdId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Household';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly Meal: {
+              columns: {
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly createdByUserId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly description: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly householdId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly name: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly recipeUrl: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly tags: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: { readonly elementNullable: false };
+                };
+                readonly updatedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'Meal_householdId_createdAt_idx_6b6c436d';
+                  readonly prefix: 'Meal_householdId_createdAt_idx';
+                  readonly columns: readonly ['householdId', 'createdAt'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'Meal_householdId_idx_fb33d798';
+                  readonly prefix: 'Meal_householdId_idx';
+                  readonly columns: readonly ['householdId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Meal';
+                    readonly columns: readonly ['householdId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Household';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly MealPhoto: {
+              columns: {
+                readonly contentType: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly data: {
+                  readonly dataType: 'pg/bytea';
+                  readonly codecId: 'pg/bytea@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly householdId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly mealId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'MealPhoto_mealId_createdAt_idx_1052d642';
+                  readonly prefix: 'MealPhoto_mealId_createdAt_idx';
+                  readonly columns: readonly ['mealId', 'createdAt'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'MealPhoto_mealId_idx_12b177d9';
+                  readonly prefix: 'MealPhoto_mealId_idx';
+                  readonly columns: readonly ['mealId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'MealPhoto';
+                    readonly columns: readonly ['mealId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Meal';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly OptionVote: {
+              columns: {
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly optionId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
                   readonly nullable: false;
                   readonly many: false;
                 };
@@ -382,18 +913,37 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly value: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [];
+              uniques: readonly [{ readonly columns: readonly ['optionId', 'userId'] }];
               indexes: readonly [
                 {
-                  readonly name: 'Item_userId_createdAt_idx_f726f04a';
-                  readonly prefix: 'Item_userId_createdAt_idx';
-                  readonly columns: readonly ['userId', 'createdAt'];
+                  readonly name: 'OptionVote_optionId_idx_b1d5fce5';
+                  readonly prefix: 'OptionVote_optionId_idx';
+                  readonly columns: readonly ['optionId'];
                   readonly unique: false;
                 },
               ];
-              foreignKeys: readonly [];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'OptionVote';
+                    readonly columns: readonly ['optionId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'DinnerOption';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
             };
           };
         };
@@ -406,13 +956,163 @@ type ContractBase = Omit<
   readonly target: 'postgres';
   readonly targetFamily: 'sql';
   readonly roots: {
-    readonly Item: { readonly namespace: 'public' & NamespaceId; readonly model: 'Item' };
+    readonly Dinner: { readonly namespace: 'public' & NamespaceId; readonly model: 'Dinner' };
+    readonly DinnerOption: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'DinnerOption';
+    };
+    readonly Household: { readonly namespace: 'public' & NamespaceId; readonly model: 'Household' };
+    readonly HouseholdMember: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'HouseholdMember';
+    };
+    readonly Meal: { readonly namespace: 'public' & NamespaceId; readonly model: 'Meal' };
+    readonly MealPhoto: { readonly namespace: 'public' & NamespaceId; readonly model: 'MealPhoto' };
+    readonly OptionVote: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'OptionVote';
+    };
   };
   readonly domain: {
     readonly namespaces: {
       readonly public: {
         readonly models: {
-          readonly Item: {
+          readonly Dinner: {
+            readonly fields: {
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly date: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/date-string@1' };
+              };
+              readonly householdId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly mealId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly note: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly updatedByUserId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly meal: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'Meal' };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['mealId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'Dinner';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly date: { readonly column: 'date' };
+                readonly householdId: { readonly column: 'householdId' };
+                readonly id: { readonly column: 'id' };
+                readonly mealId: { readonly column: 'mealId' };
+                readonly note: { readonly column: 'note' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+                readonly updatedByUserId: { readonly column: 'updatedByUserId' };
+              };
+            };
+          };
+          readonly DinnerOption: {
+            readonly fields: {
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly date: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/date-string@1' };
+              };
+              readonly householdId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly mealId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly proposedByUserId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly meal: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'Meal' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['mealId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly votes: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'OptionVote';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['optionId'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'DinnerOption';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly date: { readonly column: 'date' };
+                readonly householdId: { readonly column: 'householdId' };
+                readonly id: { readonly column: 'id' };
+                readonly mealId: { readonly column: 'mealId' };
+                readonly proposedByUserId: { readonly column: 'proposedByUserId' };
+              };
+            };
+          };
+          readonly Household: {
             readonly fields: {
               readonly createdAt: {
                 readonly nullable: false;
@@ -426,9 +1126,302 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly inviteCode: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly timeZone: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly weekStartsOn: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: {
+              readonly meals: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'Meal' };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['householdId'];
+                };
+              };
+              readonly members: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'HouseholdMember';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['householdId'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'Household';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly id: { readonly column: 'id' };
+                readonly inviteCode: { readonly column: 'inviteCode' };
+                readonly name: { readonly column: 'name' };
+                readonly timeZone: { readonly column: 'timeZone' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+                readonly weekStartsOn: { readonly column: 'weekStartsOn' };
+              };
+            };
+          };
+          readonly HouseholdMember: {
+            readonly fields: {
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly displayName: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly householdId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly userId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly household: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Household';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['householdId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'HouseholdMember';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly displayName: { readonly column: 'displayName' };
+                readonly householdId: { readonly column: 'householdId' };
+                readonly id: { readonly column: 'id' };
+                readonly userId: { readonly column: 'userId' };
+              };
+            };
+          };
+          readonly Meal: {
+            readonly fields: {
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly createdByUserId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly description: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly householdId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly recipeUrl: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly tags: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+                readonly many: { readonly elementNullable: false };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+            };
+            readonly relations: {
+              readonly dinners: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Dinner';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['mealId'];
+                };
+              };
+              readonly household: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Household';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['householdId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly options: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'DinnerOption';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['mealId'];
+                };
+              };
+              readonly photos: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'MealPhoto';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['mealId'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'Meal';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly createdByUserId: { readonly column: 'createdByUserId' };
+                readonly description: { readonly column: 'description' };
+                readonly householdId: { readonly column: 'householdId' };
+                readonly id: { readonly column: 'id' };
+                readonly name: { readonly column: 'name' };
+                readonly recipeUrl: { readonly column: 'recipeUrl' };
+                readonly tags: { readonly column: 'tags' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly MealPhoto: {
+            readonly fields: {
+              readonly contentType: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly data: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bytea@1' };
+              };
+              readonly householdId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly mealId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: {
+              readonly meal: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'Meal' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['mealId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'MealPhoto';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly contentType: { readonly column: 'contentType' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly data: { readonly column: 'data' };
+                readonly householdId: { readonly column: 'householdId' };
+                readonly id: { readonly column: 'id' };
+                readonly mealId: { readonly column: 'mealId' };
+              };
+            };
+          };
+          readonly OptionVote: {
+            readonly fields: {
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly optionId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly updatedAt: {
                 readonly nullable: false;
@@ -442,17 +1435,35 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly value: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
             };
-            readonly relations: Record<string, never>;
+            readonly relations: {
+              readonly option: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'DinnerOption';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['optionId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
             readonly storage: {
-              readonly table: 'Item';
+              readonly table: 'OptionVote';
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly id: { readonly column: 'id' };
-                readonly name: { readonly column: 'name' };
+                readonly optionId: { readonly column: 'optionId' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
                 readonly userId: { readonly column: 'userId' };
+                readonly value: { readonly column: 'value' };
               };
             };
           };
@@ -500,7 +1511,7 @@ type ContractBase = Omit<
             readonly params: { readonly precision: 3 };
           };
           readonly ref: {
-            readonly entry: 'Item';
+            readonly entry: 'Dinner';
             readonly field: 'createdAt';
             readonly namespace: 'public';
           };
@@ -517,7 +1528,130 @@ type ContractBase = Omit<
             readonly params: { readonly precision: 3 };
           };
           readonly ref: {
-            readonly entry: 'Item';
+            readonly entry: 'Dinner';
+            readonly field: 'updatedAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'DinnerOption';
+            readonly field: 'createdAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'Household';
+            readonly field: 'createdAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly onUpdate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'Household';
+            readonly field: 'updatedAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'HouseholdMember';
+            readonly field: 'createdAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'Meal';
+            readonly field: 'createdAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly onUpdate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'Meal';
+            readonly field: 'updatedAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'MealPhoto';
+            readonly field: 'createdAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'OptionVote';
+            readonly field: 'createdAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly onUpdate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'OptionVote';
             readonly field: 'updatedAt';
             readonly namespace: 'public';
           };

@@ -2,15 +2,106 @@
 
 // Data contract: the source of truth for the database schema.
 // After editing: `pnpm --filter @app/db emit`, then `pnpm --filter @app/db migration:plan`.
+//
+// Data belongs to a household (the people who plan dinners together), not to one user. Every
+// user is a member of exactly one household; services resolve it from the acting user's ID and
+// filter every query by it.
 
-// Example model, used by the example API routes and web page. Replace it with your own.
-model Item {
+model Household {
+  id           Int                @id @default(autoincrement())
+  name         String
+  // Shared with a partner so they can join this household.
+  inviteCode   String             @unique
+  // IANA time zone: decides what "today" and "this week" mean for chat assistants.
+  timeZone     String             @default("UTC")
+  // 0 = weeks start on Sunday, 1 = Monday.
+  weekStartsOn Int                @default(1)
+  createdAt    DateTime           @default(now()) @onCreate(now())
+  updatedAt    temporal.UpdatedAt
+  members      HouseholdMember[]
+  meals        Meal[]
+}
+
+model HouseholdMember {
+  id          Int       @id @default(autoincrement())
+  // The authenticated user's ID (WorkOS `sub`). A user belongs to one household.
+  userId      String    @unique
+  householdId Int
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  displayName String?
+  createdAt   DateTime  @default(now()) @onCreate(now())
+
+  @@index([householdId])
+}
+
+model Meal {
+  id              Int                @id @default(autoincrement())
+  householdId     Int
+  household       Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  recipeUrl       String?
+  tags            String[]
+  createdByUserId String
+  createdAt       DateTime           @default(now()) @onCreate(now())
+  updatedAt       temporal.UpdatedAt
+  photos          MealPhoto[]
+  dinners         Dinner[]
+  options         DinnerOption[]
+
+  @@index([householdId, createdAt])
+}
+
+model MealPhoto {
+  id          Int      @id @default(autoincrement())
+  mealId      Int
+  meal        Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  householdId Int
+  contentType String
+  data        Bytes
+  createdAt   DateTime @default(now()) @onCreate(now())
+
+  @@index([mealId, createdAt])
+}
+
+// The dinner chosen for one night: a meal, a note ("eating out"), or both.
+model Dinner {
+  id              Int                @id @default(autoincrement())
+  householdId     Int
+  date            Date
+  mealId          Int?
+  meal            Meal?              @relation(fields: [mealId], references: [id], onDelete: SetNull)
+  note            String?
+  updatedByUserId String
+  createdAt       DateTime           @default(now()) @onCreate(now())
+  updatedAt       temporal.UpdatedAt
+
+  @@unique([householdId, date])
+}
+
+// A meal proposed for a night, for the household to vote on.
+model DinnerOption {
+  id               Int          @id @default(autoincrement())
+  householdId      Int
+  date             Date
+  mealId           Int
+  meal             Meal         @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  proposedByUserId String
+  createdAt        DateTime     @default(now()) @onCreate(now())
+  votes            OptionVote[]
+
+  @@unique([householdId, date, mealId])
+}
+
+model OptionVote {
   id        Int                @id @default(autoincrement())
-  // Owner: the authenticated user's ID (WorkOS `sub`). Every query filters by it.
+  optionId  Int
+  option    DinnerOption       @relation(fields: [optionId], references: [id], onDelete: Cascade)
   userId    String
-  name      String
+  // "up" or "down".
+  value     String
   createdAt DateTime           @default(now()) @onCreate(now())
   updatedAt temporal.UpdatedAt
 
-  @@index([userId, createdAt])
+  @@unique([optionId, userId])
 }

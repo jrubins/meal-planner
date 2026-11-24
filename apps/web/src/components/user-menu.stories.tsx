@@ -14,16 +14,16 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const WithEmail: Story = {
+export const WithName: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText('you@example.com')).toBeInTheDocument();
+    await expect(canvas.getByText('Alex Lee')).toBeInTheDocument();
     await userEvent.click(canvas.getByRole('button', { name: 'Sign out' }));
     await expect(args.onSignOut).toHaveBeenCalled();
   },
 };
 
-/** Dev sign-in users have no email: the name (their user ID) is shown instead. */
+/** Dev sign-in users' name is their user ID. */
 export const DevUser: Story = {
   args: { user: { id: 'dev-user', email: null, name: 'dev-user' } },
 };
