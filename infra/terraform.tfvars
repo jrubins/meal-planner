@@ -1,12 +1,22 @@
 # Non-secret settings for this deployment. Secrets are environment variables in CI.
-# Replace every CHANGE-ME here and the state key in versions.tf (see infra/README.md).
-project_name        = "meal-planner"     # base name for Vercel, Neon and Sentry projects
-github_owner        = "jrubins"          # GitHub user or organization
-github_repository   = "meal-planner"     # this repository's name
-sentry_organization = "jonbox"           # Sentry organization slug
-workos_client_id    = "client_CHANGE-ME" # WorkOS: Developer > API Keys
-authkit_domain      = "https://CHANGE-ME.authkit.app"
+# See infra/README.md.
+
+# Base name for the Vercel, Neon and Sentry projects.
+project_name = "meal-planner"
+
+# GitHub user or organization, and this repository's name.
+github_owner      = "jrubins"
+github_repository = "meal-planner"
+
+# Sentry organization slug.
+sentry_organization = "jonbox"
+
+# WorkOS (AuthKit), from the "Meal Planner" workspace: API Keys and the AuthKit domain.
+workos_client_id = "client_01M85JYH2S9WYHB9V1GAB1ARQV"
+authkit_domain   = "https://tactful-vessel-32.authkit.app"
+
 # Vercel team "Jon Rubins' projects" (personal), not the work team:
 vercel_team_id = "team_VmOKVE4X5FKT5sJdDW2iuEvL"
+
 # Once you've both signed in, add both WorkOS user IDs to lock the app to the two of you:
 allowed_user_ids = []
