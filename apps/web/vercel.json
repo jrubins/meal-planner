@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://meal-planner-api.vercel.app/:path*"
+      "destination": "https://meal-planner-api-phi.vercel.app/:path*"
     },
     { "source": "/(.*)", "destination": "/index.html" }
   ],

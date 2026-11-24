@@ -18,6 +18,9 @@ authkit_domain   = "https://tactful-vessel-32.authkit.app"
 # Neon organization (Neon requires one for new projects).
 neon_org_id = "org-dawn-boat-78015684"
 
+# Vercel gave the API a suffixed address: meal-planner-api.vercel.app was taken.
+api_url = "https://meal-planner-api-phi.vercel.app"
+
 # Vercel team "Jon Rubins' projects" (personal), not the work team:
 vercel_team_id = "team_VmOKVE4X5FKT5sJdDW2iuEvL"
 

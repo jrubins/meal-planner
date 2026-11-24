@@ -29,8 +29,9 @@ Links below are filled in for `jrubins/meal-planner` (project name `meal-planner
       Terraform creates the `meal-planner-web` and `meal-planner-api` projects, and fails if
       projects with those names already exist.
 - [x] **API address in `apps/web/vercel.json`**: the `/api/:path*` rewrite points at
-      `meal-planner-api.vercel.app`. Once the first apply prints `api_url`, check it matches
-      (Vercel adds a suffix when the plain name is taken) and update the rewrite if not. The browser reaches
+      `meal-planner-api-phi.vercel.app`, the address Vercel gave the API (the plain
+      `meal-planner-api.vercel.app` was taken). It must match `api_url` in
+      `infra/terraform.tfvars`. The browser reaches
       the API only through this rewrite, so the session cookie stays first-party.
 - [x] **Neon**: [sign up](https://console.neon.tech/signup). Terraform creates the project.
 - [x] **Sentry**: [sign up](https://sentry.io/signup/), then copy the **Organization Slug** from
@@ -100,7 +101,7 @@ other environment gives "redirect URI invalid" at sign-in.
 | Redirects → Sign-out redirect                             | `https://meal-planner-web.vercel.app` (sign-out fails without one)                                        | [ ]  |
 | Client ID Metadata Document (search "Client ID Metadata") | Enabled (how Claude registers)                                                                            | [ ]  |
 | Dynamic Client Registration (search "Dynamic Client")     | Enabled (older MCP clients)                                                                               | [ ]  |
-| Resource Indicators                                       | `https://meal-planner-api.vercel.app/mcp`, set as default                                                 | [ ]  |
+| Resource Indicators                                       | `https://meal-planner-api-phi.vercel.app/mcp`, set as default                                             | [ ]  |
 | Sign-up                                                   | Restricted to the two of you, or locked via `allowed_user_ids`                                            | [ ]  |
 
 The browser never calls WorkOS directly (sign-in runs on the API), so WorkOS needs no CORS
@@ -116,8 +117,8 @@ Fill these in after the first apply.
 | What                   | URL                                                                 |
 | ---------------------- | ------------------------------------------------------------------- |
 | Web app                | https://meal-planner-web.vercel.app                                 |
-| API                    | https://meal-planner-api.vercel.app                                 |
-| MCP (Claude connector) | https://meal-planner-api.vercel.app/mcp                             |
+| API                    | https://meal-planner-api-phi.vercel.app                             |
+| MCP (Claude connector) | https://meal-planner-api-phi.vercel.app/mcp                         |
 | Neon project           | `snowy-butterfly-10400644` in organization `org-dawn-boat-78015684` |
 | Sentry projects        | `meal-planner-api` and `meal-planner-web` in `jonbox`               |
 | Terraform state        | `terraform-state` bucket in R2                                      |
