@@ -15,34 +15,36 @@ Links below are filled in for `jrubins/meal-planner` (project name `meal-planner
 
 ## 1. Accounts and one-time setup
 
-- [ ] **`main` branch** exists. Terraform makes it the
+- [x] **`main` branch** exists. Terraform makes it the
       default branch and protects it.
-- [ ] **WorkOS** account and AuthKit application created ([sign up](https://workos.com)) (see section 3 for its settings).
-- [ ] **Cloudflare R2** (state storage, free tier): [sign up](https://dash.cloudflare.com/sign-up),
+- [x] **WorkOS** account and AuthKit application created ([sign up](https://workos.com)) (see section 3 for its settings).
+- [x] **Cloudflare R2** (state storage, free tier): [sign up](https://dash.cloudflare.com/sign-up),
       then open [R2](https://dash.cloudflare.com/?to=/:account/r2/overview) and enable it (it asks
       for a payment method even on the free tier). Create a bucket named `terraform-state`; one
       bucket can hold every project's state, each under its own key (this one:
       `meal-planner/terraform.tfstate`). Copy your **Account ID** from the R2 overview page.
-- [ ] **Vercel**: [sign up](https://vercel.com/signup) with GitHub, then
+- [x] **Vercel**: [sign up](https://vercel.com/signup) with GitHub, then
       [install the Vercel GitHub app](https://github.com/apps/vercel/installations/new) on
-      `jrubins/meal-planner` only.
-- [ ] **API address in `apps/web/vercel.json`**: the `/api/:path*` rewrite points at
+      `jrubins/meal-planner` only. **Don't import the repository in Vercel's dashboard:**
+      Terraform creates the `meal-planner-web` and `meal-planner-api` projects, and fails if
+      projects with those names already exist.
+- [x] **API address in `apps/web/vercel.json`**: the `/api/:path*` rewrite points at
       `meal-planner-api.vercel.app`. Once the first apply prints `api_url`, check it matches
       (Vercel adds a suffix when the plain name is taken) and update the rewrite if not. The browser reaches
       the API only through this rewrite, so the session cookie stays first-party.
-- [ ] **Neon**: [sign up](https://console.neon.tech/signup). Terraform creates the project.
-- [ ] **Sentry**: [sign up](https://sentry.io/signup/), then copy the **Organization Slug** from
+- [x] **Neon**: [sign up](https://console.neon.tech/signup). Terraform creates the project.
+- [x] **Sentry**: [sign up](https://sentry.io/signup/), then copy the **Organization Slug** from
       [Settings → General Settings](https://sentry.io/settings/) into `sentry_organization` in
       `infra/terraform.tfvars`.
-- [ ] **Credentials**: create each one in section 2 and save it as a
+- [x] **Credentials**: create each one in section 2 and save it as a
       [repository secret](https://github.com/jrubins/meal-planner/settings/secrets/actions).
-- [ ] **Repository variables**
+- [x] **Repository variables**
       ([Actions variables](https://github.com/jrubins/meal-planner/settings/variables/actions)):
       `TF_STATE_BUCKET` = `terraform-state`, `CLOUDFLARE_ACCOUNT_ID` = your Cloudflare
       account ID.
-- [ ] **First apply**: [Actions → Infrastructure](https://github.com/jrubins/meal-planner/actions/workflows/infra.yml)
+- [x] **First apply**: [Actions → Infrastructure](https://github.com/jrubins/meal-planner/actions/workflows/infra.yml)
       → **Run workflow** on `main`. Then redeploy both Vercel projects once.
-- [ ] **WorkOS production settings** (section 3).
+- [x] **WorkOS production settings** (section 3).
 - [ ] **Claude connector**: in [claude.ai Settings → Connectors](https://claude.ai/settings/connectors),
       add a custom connector with the MCP URL (section 4). Sign in once. Each partner does this
       in their own Claude account.
@@ -59,16 +61,16 @@ All of these are GitHub Actions secrets on this repository, used only by
 Terraform generates it and writes it straight to Vercel (bump `cookie_password_version` in
 `infra/terraform.tfvars` to replace it, which signs everyone out). Prefer an expiry, and note it here so rotation isn't a surprise.
 
-| Secret                    | What it is                                                               | Create it at                                                                                    | Permissions                                                                                                | Expires | Last set |
-| ------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------- | -------- |
-| `R2_ACCESS_KEY_ID`        | R2 API token: Access Key ID                                              | [R2 → Manage API tokens](https://dash.cloudflare.com/?to=/:account/r2/api-tokens)               | Object Read & Write, only the `terraform-state` bucket; **no IP filter** (GitHub runners use changing IPs) |         |          |
-| `R2_SECRET_ACCESS_KEY`    | R2 API token: Secret Access Key (same token)                             | Shown once when you create the token above                                                      | (same token)                                                                                               |         |          |
-| `VERCEL_API_TOKEN`        | Vercel access token                                                      | [Vercel → Account settings → Tokens](https://vercel.com/account/settings/tokens)                | Scope: your personal account (or the team)                                                                 |         |          |
-| `NEON_API_KEY`            | Neon API key                                                             | [Neon → Account settings → API keys](https://console.neon.tech/app/settings/api-keys)           | Personal key (the whole account)                                                                           |         |          |
-| `SENTRY_AUTH_TOKEN`       | Sentry personal token for Terraform                                      | [Sentry → User settings → Personal Tokens](https://sentry.io/settings/account/api/auth-tokens/) | `org:read`, `project:admin`, `team:admin`                                                                  |         |          |
-| `INFRA_GITHUB_TOKEN`      | Fine-grained personal access token                                       | [GitHub → Fine-grained tokens → New](https://github.com/settings/personal-access-tokens/new)    | Only `jrubins/meal-planner`; Administration: RW                                                            |         |          |
-| `WORKOS_API_KEY`          | WorkOS API key: the API signs browsers in with it (server-side sessions) | [WorkOS → API Keys](https://dashboard.workos.com/api-keys)                                      | The same WorkOS environment as your client ID (Staging or Production)                                      |         |          |
-| `SENTRY_SOURCEMAPS_TOKEN` | Optional: Sentry organization token (uploads)                            | [Sentry → Settings → Auth Tokens](https://sentry.io/settings/auth-tokens/)                      | Created with the default organization token scopes                                                         |         |          |
+| Secret                    | What it is                                                               | Create it at                                                                                    | Permissions                                                                                                | Expires | Last set   |
+| ------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------- | ---------- |
+| `R2_ACCESS_KEY_ID`        | R2 API token: Access Key ID                                              | [R2 → Manage API tokens](https://dash.cloudflare.com/?to=/:account/r2/api-tokens)               | Object Read & Write, only the `terraform-state` bucket; **no IP filter** (GitHub runners use changing IPs) |         | 2026-11-24 |
+| `R2_SECRET_ACCESS_KEY`    | R2 API token: Secret Access Key (same token)                             | Shown once when you create the token above                                                      | (same token)                                                                                               |         | 2026-11-24 |
+| `VERCEL_API_TOKEN`        | Vercel access token                                                      | [Vercel → Account settings → Tokens](https://vercel.com/account/settings/tokens)                | Scope: your personal account (or the team)                                                                 |         | 2026-11-24 |
+| `NEON_API_KEY`            | Neon API key                                                             | [Neon → Account settings → API keys](https://console.neon.tech/app/settings/api-keys)           | Personal key (the whole account)                                                                           |         | 2026-11-24 |
+| `SENTRY_AUTH_TOKEN`       | Sentry personal token for Terraform                                      | [Sentry → User settings → Personal Tokens](https://sentry.io/settings/account/api/auth-tokens/) | `org:read`, `project:admin`, `team:admin`                                                                  |         | 2026-11-24 |
+| `INFRA_GITHUB_TOKEN`      | Fine-grained personal access token                                       | [GitHub → Fine-grained tokens → New](https://github.com/settings/personal-access-tokens/new)    | Only `jrubins/meal-planner`; Administration: RW                                                            |         | 2026-11-24 |
+| `WORKOS_API_KEY`          | WorkOS API key: the API signs browsers in with it (server-side sessions) | [WorkOS → API Keys](https://dashboard.workos.com/api-keys)                                      | The same WorkOS environment as your client ID (Staging or Production)                                      |         | 2026-11-24 |
+| `SENTRY_SOURCEMAPS_TOKEN` | Optional: Sentry organization token (uploads)                            | [Sentry → Settings → Auth Tokens](https://sentry.io/settings/auth-tokens/)                      | Created with the default organization token scopes                                                         |         |            |
 
 Also set `sentry_sourcemaps_token_version = 1` in `infra/terraform.tfvars` if you add
 `SENTRY_SOURCEMAPS_TOKEN`.
@@ -111,11 +113,11 @@ If Vercel assigned different URLs (the first apply prints `web_url`, `api_url` a
 
 Fill these in after the first apply.
 
-| What                   | URL                            |
-| ---------------------- | ------------------------------ |
-| Web app                |                                |
-| API                    |                                |
-| MCP (Claude connector) |                                |
-| Neon project           |                                |
-| Sentry projects        |                                |
-| Terraform state        | `terraform-state` bucket in R2 |
+| What                   | URL                                                                 |
+| ---------------------- | ------------------------------------------------------------------- |
+| Web app                | https://meal-planner-web.vercel.app                                 |
+| API                    | https://meal-planner-api.vercel.app                                 |
+| MCP (Claude connector) | https://meal-planner-api.vercel.app/mcp                             |
+| Neon project           | `snowy-butterfly-10400644` in organization `org-dawn-boat-78015684` |
+| Sentry projects        | `meal-planner-api` and `meal-planner-web` in `jonbox`               |
+| Terraform state        | `terraform-state` bucket in R2                                      |
