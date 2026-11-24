@@ -15,6 +15,9 @@ sentry_organization = "jonbox"
 workos_client_id = "client_01M85JYH2S9WYHB9V1GAB1ARQV"
 authkit_domain   = "https://tactful-vessel-32.authkit.app"
 
+# Neon organization (Neon requires one for new projects).
+neon_org_id = "org-dawn-boat-78015684"
+
 # Vercel team "Jon Rubins' projects" (personal), not the work team:
 vercel_team_id = "team_VmOKVE4X5FKT5sJdDW2iuEvL"
 
