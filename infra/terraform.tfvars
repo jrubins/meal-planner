@@ -3,7 +3,7 @@
 project_name        = "meal-planner"     # base name for Vercel, Neon and Sentry projects
 github_owner        = "jrubins"          # GitHub user or organization
 github_repository   = "meal-planner"     # this repository's name
-sentry_organization = "CHANGE-ME"        # Sentry organization slug
+sentry_organization = "jonbox"           # Sentry organization slug
 workos_client_id    = "client_CHANGE-ME" # WorkOS: Developer > API Keys
 authkit_domain      = "https://CHANGE-ME.authkit.app"
 # Vercel team "Jon Rubins' projects" (personal), not the work team:
