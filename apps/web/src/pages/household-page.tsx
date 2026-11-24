@@ -130,7 +130,7 @@ export function HouseholdPage() {
         <div className="flex items-center gap-2">
           <code
             className="bg-secondary rounded-lg px-4 py-2 font-mono text-xl tracking-[0.25em]"
-            aria-label="Invite code"
+            aria-label="Your invite code"
           >
             {household.inviteCode}
           </code>
@@ -208,7 +208,7 @@ export function HouseholdPage() {
       >
         <InlineForm
           id="invite-code"
-          label="Invite code"
+          label="Their invite code"
           initial=""
           placeholder="ABCD2345"
           submitLabel="Join"

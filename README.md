@@ -1,14 +1,48 @@
-# Full-stack TypeScript monorepo template
+# Dinner Plan
 
-A starting point for web apps: a React frontend on Vercel's CDN, an Express API on Vercel
-Functions, Postgres on Neon, and Sentry for errors, tracing, logs and metrics.
-The example "items" feature runs through every layer, so the wiring is easy to follow.
-Replace it with your own features.
+A weekly dinner planner for a household of two, built to be used mostly from a chat with
+Claude. The web app is mainly for looking: what's for dinner each night this week, the
+options you're deciding between, and your meal library with photos.
 
-**Working with AI agents:** [`AGENTS.md`](AGENTS.md) holds the working rules: architecture,
-the add-a-feature checklist, testing rules and notes on library APIs newer than most models'
-training data. `CLAUDE.md` imports it for Claude Code, and `.claude/settings.json` formats and
-lints every file Claude edits.
+## What it does
+
+- **The week** is the home page: one dinner per night (a meal, a note like "eating out", or
+  both). Weeks start on Monday by default (changeable on the Household page).
+- **Options and votes:** either of you can propose several meals for a night; each of you gives
+  each option a thumbs up or down, and **Pick** makes one the night's dinner. The other options
+  stay listed, so the choice can change.
+- **Meals:** a shared library with tags, notes, a recipe link, photos, and a history of when
+  each meal was last eaten. Photos are resized in the browser and stored in Postgres, behind a
+  `PhotoStore` interface (`apps/api/src/features/meals/photo-store.ts`) so they can move to blob
+  storage later without changing the API.
+- **Inspiration:** suggestions favour meals you haven't had for a while and skip ones already in
+  the week. **Shuffle** suggests one meal for a night; **Fill empty nights** adds two options to
+  every unplanned night, ready to vote on. **Surprise me** on the Meals page picks one at random.
+- **Households:** each person signs in separately and belongs to one household. Share the
+  invite code on the Household page and the other person joins it, bringing their meals along.
+
+## Planning with Claude
+
+The API is also an MCP server (`/mcp`). Add it to Claude as a custom connector (see
+[Connecting Claude](#connecting-claude)), each of you in your own account, and plan in a chat:
+
+> "What's on this week?" · "Put fish tacos on Wednesday" · "Suggest three options for Thursday
+> and Friday, nothing we've had in the last two weeks" · "I'm a thumbs down on the risotto" ·
+> "Add a meal: chicken tikka masala, tags indian and chicken, recipe at …" · "We're eating out
+> Friday"
+
+The tools (`apps/api/src/features/mcp/mcp.tools.ts`): `get_household`, `update_household`,
+`set_my_name`, `get_week`, `plan_dinner`, `clear_dinner`, `propose_options`, `remove_option`,
+`vote_on_option`, `choose_option`, `suggest_meals`, `shuffle_week`, `list_meals`, `get_meal`,
+`create_meal`, `update_meal` and `delete_meal`. Meals can be named instead of looked up by ID,
+and the server sends Claude short instructions on how the plan works. Photos are added in the
+web app.
+
+## Built on
+
+This project started from the [full-stack template](https://github.com/jrubins/fullstack-template):
+a React frontend on Vercel's CDN, an Express API on Vercel Functions, Postgres on Neon, and
+Sentry for errors, tracing, logs and metrics.
 
 ## Stack
 
@@ -184,7 +218,7 @@ Sentry stays off until a DSN is set (`SENTRY_DSN` for the API, `VITE_SENTRY_DSN`
 
 - **API:** errors (5xx only), request tracing including Express middleware, `pg` and Prisma
   spans, pino logs sent to Sentry Logs, and custom metrics (`Sentry.metrics.count(...)`, see
-  the items service). `src/instrument.ts` must load before the app: both entry points import
+  the meals service). `src/instrument.ts` must load before the app: both entry points import
   it first and then load the app with a dynamic `import()`.
 - **Web:** errors (including React render errors), page-load and navigation tracing via the
   TanStack Router integration, and session replay. Replays are recorded only when an error
@@ -221,15 +255,6 @@ integration, which can give each preview deployment its own database branch. Run
 against it with `DATABASE_URL=<neon url> pnpm db:migrate`.
 
 Vercel uses Node 26 from the `engines` field in each package.json.
-
-## Using this as a GitHub template
-
-1. On GitHub: **Settings → General → Template repository**. New repos then come from
-   **Use this template**.
-2. In a new repo, rename the `@app/*` package scope if you like (search for `@app/`), update
-   the root `package.json` name and the `<title>` in `apps/web/index.html`, and replace the
-   example `Item` model, routes, pages and stories.
-3. To deploy, fill in `infra/terraform.tfvars` and follow [`infra/README.md`](infra/README.md).
 
 ## Notes and caveats
 

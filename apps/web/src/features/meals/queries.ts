@@ -55,10 +55,18 @@ export function useUpdateMeal(id: number) {
 }
 
 export function useDeleteMeal() {
-  const invalidate = useInvalidateMeals();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => apiRequest(`/meals/${id}`, null, { method: 'DELETE' }),
-    onSuccess: invalidate,
+    // Refresh everything except the deleted meal itself, which no longer exists to fetch.
+    onSuccess: (_, id) =>
+      Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['meals'],
+          predicate: (query) => query.queryKey[1] !== id,
+        }),
+        queryClient.invalidateQueries({ queryKey: ['week'] }),
+      ]),
   });
 }
 

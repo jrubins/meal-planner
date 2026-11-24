@@ -3,7 +3,7 @@
 This file records every step that happens outside the code, such as dashboards, accounts and
 tokens. Terraform (`infra/`) handles everything else.
 
-Replace `<owner>/<repo>` and `<project>` (your `project_name`) in the links below.
+Links below are filled in for `jrubins/meal-planner` (project name `meal-planner`).
 
 **Keep it current:**
 
@@ -22,31 +22,35 @@ Replace `<owner>/<repo>` and `<project>` (your `project_name`) in the links belo
       then open [R2](https://dash.cloudflare.com/?to=/:account/r2/overview) and enable it (it asks
       for a payment method even on the free tier). Create a bucket named `terraform-state`; one
       bucket can hold every project's state, each under its own key (this one:
-      `CHANGE-ME/terraform.tfstate`). Copy your **Account ID** from the R2 overview page.
+      `meal-planner/terraform.tfstate`). Copy your **Account ID** from the R2 overview page.
 - [ ] **Vercel**: [sign up](https://vercel.com/signup) with GitHub, then
       [install the Vercel GitHub app](https://github.com/apps/vercel/installations/new) on
-      `<owner>/<repo>` only.
-- [ ] **API address in `apps/web/vercel.json`**: replace `<project>` in the `/api/:path*`
-      rewrite with your project name, or with the API's real address once the first apply
-      prints `api_url` (Vercel adds a suffix when the plain name is taken). The browser reaches
+      `jrubins/meal-planner` only.
+- [ ] **API address in `apps/web/vercel.json`**: the `/api/:path*` rewrite points at
+      `meal-planner-api.vercel.app`. Once the first apply prints `api_url`, check it matches
+      (Vercel adds a suffix when the plain name is taken) and update the rewrite if not. The browser reaches
       the API only through this rewrite, so the session cookie stays first-party.
 - [ ] **Neon**: [sign up](https://console.neon.tech/signup). Terraform creates the project.
 - [ ] **Sentry**: [sign up](https://sentry.io/signup/), then copy the **Organization Slug** from
       [Settings → General Settings](https://sentry.io/settings/) into `sentry_organization` in
       `infra/terraform.tfvars`.
 - [ ] **Credentials**: create each one in section 2 and save it as a
-      [repository secret](https://github.com/<owner>/<repo>/settings/secrets/actions).
+      [repository secret](https://github.com/jrubins/meal-planner/settings/secrets/actions).
 - [ ] **Repository variables**
-      ([Actions variables](https://github.com/<owner>/<repo>/settings/variables/actions)):
+      ([Actions variables](https://github.com/jrubins/meal-planner/settings/variables/actions)):
       `TF_STATE_BUCKET` = `terraform-state`, `CLOUDFLARE_ACCOUNT_ID` = your Cloudflare
       account ID.
-- [ ] **First apply**: [Actions → Infrastructure](https://github.com/<owner>/<repo>/actions/workflows/infra.yml)
+- [ ] **First apply**: [Actions → Infrastructure](https://github.com/jrubins/meal-planner/actions/workflows/infra.yml)
       → **Run workflow** on `main`. Then redeploy both Vercel projects once.
 - [ ] **WorkOS production settings** (section 3).
 - [ ] **Claude connector**: in [claude.ai Settings → Connectors](https://claude.ai/settings/connectors),
-      add a custom connector with the MCP URL (section 4). Sign in once.
-- [ ] **Lock the app to you**: copy your WorkOS user ID (`user_...`, under Users in the WorkOS
-      dashboard) into `allowed_user_ids` in `infra/terraform.tfvars`, then merge.
+      add a custom connector with the MCP URL (section 4). Sign in once. Each partner does this
+      in their own Claude account.
+- [ ] **Join one household**: one partner opens **Household** in the web app and shares the
+      invite code; the other enters it under "Join a household".
+- [ ] **Lock the app to the two of you**: once you've both signed in, copy both WorkOS user IDs
+      (`user_...`, under Users in the WorkOS dashboard) into `allowed_user_ids` in
+      `infra/terraform.tfvars`, then merge.
 
 ## 2. Credentials
 
@@ -62,7 +66,7 @@ Terraform generates it and writes it straight to Vercel (bump `cookie_password_v
 | `VERCEL_API_TOKEN`        | Vercel access token                                                      | [Vercel → Account settings → Tokens](https://vercel.com/account/settings/tokens)                | Scope: your personal account (or the team)                                                                 |         |          |
 | `NEON_API_KEY`            | Neon API key                                                             | [Neon → Account settings → API keys](https://console.neon.tech/app/settings/api-keys)           | Personal key (the whole account)                                                                           |         |          |
 | `SENTRY_AUTH_TOKEN`       | Sentry personal token for Terraform                                      | [Sentry → User settings → Personal Tokens](https://sentry.io/settings/account/api/auth-tokens/) | `org:read`, `project:admin`, `team:admin`                                                                  |         |          |
-| `INFRA_GITHUB_TOKEN`      | Fine-grained personal access token                                       | [GitHub → Fine-grained tokens → New](https://github.com/settings/personal-access-tokens/new)    | Only `<owner>/<repo>`; Administration: RW                                                                  |         |          |
+| `INFRA_GITHUB_TOKEN`      | Fine-grained personal access token                                       | [GitHub → Fine-grained tokens → New](https://github.com/settings/personal-access-tokens/new)    | Only `jrubins/meal-planner`; Administration: RW                                                            |         |          |
 | `WORKOS_API_KEY`          | WorkOS API key: the API signs browsers in with it (server-side sessions) | [WorkOS → API Keys](https://dashboard.workos.com/api-keys)                                      | The same WorkOS environment as your client ID (Staging or Production)                                      |         |          |
 | `SENTRY_SOURCEMAPS_TOKEN` | Optional: Sentry organization token (uploads)                            | [Sentry → Settings → Auth Tokens](https://sentry.io/settings/auth-tokens/)                      | Created with the default organization token scopes                                                         |         |          |
 
@@ -83,19 +87,19 @@ Every setting below belongs to one WorkOS environment (Staging or Production, sw
 top of the dashboard): the one your client ID and API key come from. A redirect URI saved in the
 other environment gives "redirect URI invalid" at sign-in.
 
-| Setting                                                   | Value                                                                                                  | Done |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---- |
-| Client ID                                                 | `client_...`                                                                                           | [ ]  |
-| AuthKit domain                                            | `https://<your-app>.authkit.app`                                                                       | [ ]  |
-| Authentication → sign-in methods                          | Turn on Magic Auth (or email + password): new environments may offer only SSO, which blocks sign-in    | [ ]  |
-| Redirects → Redirect URI (local)                          | `http://localhost:5173/api/auth/callback`                                                              | [ ]  |
-| Redirects → Redirect URI (production)                     | `https://<project>-web.vercel.app/api/auth/callback` (sign-in returns to the API, through the web app) | [ ]  |
-| Redirects → Initiate login URI                            | `https://<project>-web.vercel.app/login`                                                               | [ ]  |
-| Redirects → Sign-out redirect                             | `https://<project>-web.vercel.app` (sign-out fails without one)                                        | [ ]  |
-| Client ID Metadata Document (search "Client ID Metadata") | Enabled (how Claude registers)                                                                         | [ ]  |
-| Dynamic Client Registration (search "Dynamic Client")     | Enabled (older MCP clients)                                                                            | [ ]  |
-| Resource Indicators                                       | `https://<project>-api.vercel.app/mcp`, set as default                                                 | [ ]  |
-| Sign-up                                                   | Restricted to you, or locked via `allowed_user_ids`                                                    | [ ]  |
+| Setting                                                   | Value                                                                                                     | Done |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---- |
+| Client ID                                                 | `client_...`                                                                                              | [ ]  |
+| AuthKit domain                                            | `https://<your-app>.authkit.app`                                                                          | [ ]  |
+| Authentication → sign-in methods                          | Turn on Magic Auth (or email + password): new environments may offer only SSO, which blocks sign-in       | [ ]  |
+| Redirects → Redirect URI (local)                          | `http://localhost:5173/api/auth/callback`                                                                 | [ ]  |
+| Redirects → Redirect URI (production)                     | `https://meal-planner-web.vercel.app/api/auth/callback` (sign-in returns to the API, through the web app) | [ ]  |
+| Redirects → Initiate login URI                            | `https://meal-planner-web.vercel.app/login`                                                               | [ ]  |
+| Redirects → Sign-out redirect                             | `https://meal-planner-web.vercel.app` (sign-out fails without one)                                        | [ ]  |
+| Client ID Metadata Document (search "Client ID Metadata") | Enabled (how Claude registers)                                                                            | [ ]  |
+| Dynamic Client Registration (search "Dynamic Client")     | Enabled (older MCP clients)                                                                               | [ ]  |
+| Resource Indicators                                       | `https://meal-planner-api.vercel.app/mcp`, set as default                                                 | [ ]  |
+| Sign-up                                                   | Restricted to the two of you, or locked via `allowed_user_ids`                                            | [ ]  |
 
 The browser never calls WorkOS directly (sign-in runs on the API), so WorkOS needs no CORS
 setting.

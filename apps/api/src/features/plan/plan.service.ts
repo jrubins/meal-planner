@@ -43,9 +43,7 @@ export function createPlanService(db: Db, households: HouseholdService, meals: M
       Options.where({ householdId: household.id })
         .where((o) => o.date.gte(first))
         .where((o) => o.date.lte(last))
-        .include('votes', (votes) =>
-          votes.orderBy([(v) => v.createdAt.asc(), (v) => v.id.asc()]),
-        )
+        .include('votes', (votes) => votes.orderBy([(v) => v.createdAt.asc(), (v) => v.id.asc()]))
         .orderBy([(o) => o.createdAt.asc(), (o) => o.id.asc()])
         .limit(500)
         .all(),

@@ -208,7 +208,10 @@ export function createMealsService(db: Db, households: HouseholdService, photos:
     },
 
     /** Summaries of these meals (for plans), keyed by ID. Missing IDs are left out. */
-    async summaries(householdId: number, ids: readonly number[]): Promise<Map<number, MealSummary>> {
+    async summaries(
+      householdId: number,
+      ids: readonly number[],
+    ): Promise<Map<number, MealSummary>> {
       const unique = [...new Set(ids)];
       if (unique.length === 0) return new Map();
       const meals = await Meals.where({ householdId })

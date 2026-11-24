@@ -14,13 +14,13 @@ test.describe('signed out', () => {
     await page.getByLabel('User ID').fill(`e2e-signin-${randomUUID()}`);
     await page.getByRole('button', { name: 'Sign in' }).click();
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Overview' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'This week' })).toBeVisible();
 
     // The session is an HttpOnly cookie on the web app's origin, so it survives a reload.
     const cookies = await page.context().cookies();
     expect(cookies.find((cookie) => cookie.name === 'app_dev_session')?.httpOnly).toBe(true);
     await page.reload();
-    await expect(page.getByRole('heading', { level: 1, name: 'Overview' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'This week' })).toBeVisible();
   });
 });
 
@@ -36,24 +36,24 @@ test('signs out', async ({ page, user }) => {
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
 });
 
-test("doesn't show other users' items", async ({ page, api, playwright }) => {
-  // Another user's item, created through the API as that user.
+test("doesn't show other households' meals", async ({ page, api, playwright }) => {
+  // Another user's meal, created through the API as that user.
   const other = await playwright.request.newContext({ baseURL: API_URL });
   const signIn = await other.post('/auth/dev-token', {
     data: { userId: `e2e-other-${randomUUID()}` },
   });
   const { token } = DevTokenResponseSchema.parse(await signIn.json());
   const foreign = unique('Foreign');
-  await other.post('/items', {
+  await other.post('/meals', {
     data: { name: foreign },
     headers: { Authorization: `Bearer ${token}` },
   });
   await other.dispose();
   // And one of our own, so the list isn't empty.
   const mine = unique('Mine');
-  await api.post('/items', { data: { name: mine } });
+  await api.post('/meals', { data: { name: mine } });
 
-  await page.goto('/items');
+  await page.goto('/meals');
 
   await expect(page.getByText(mine)).toBeVisible();
   await expect(page.getByText(foreign)).toHaveCount(0);

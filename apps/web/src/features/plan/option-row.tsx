@@ -55,7 +55,10 @@ export function OptionRow({ option, me, members, onVote, onChoose, onRemove }: O
         <Button
           variant="ghost"
           size="icon"
-          className={cn('size-8', myVote === 'up' && 'bg-vote-up/15 text-vote-up')}
+          className={cn(
+            'size-8',
+            myVote === 'up' && 'bg-vote-up/15 text-vote-up hover:bg-vote-up/25 hover:text-vote-up',
+          )}
           aria-label={`Thumbs up for ${option.meal.name}`}
           aria-pressed={myVote === 'up'}
           onClick={() => onVote(myVote === 'up' ? 'none' : 'up')}
@@ -65,7 +68,11 @@ export function OptionRow({ option, me, members, onVote, onChoose, onRemove }: O
         <Button
           variant="ghost"
           size="icon"
-          className={cn('size-8', myVote === 'down' && 'bg-vote-down/15 text-vote-down')}
+          className={cn(
+            'size-8',
+            myVote === 'down' &&
+              'bg-vote-down/15 text-vote-down hover:bg-vote-down/25 hover:text-vote-down',
+          )}
           aria-label={`Thumbs down for ${option.meal.name}`}
           aria-pressed={myVote === 'down'}
           onClick={() => onVote(myVote === 'down' ? 'none' : 'down')}

@@ -26,7 +26,7 @@ export const WithIcon: Story = {
   args: {
     children: (
       <>
-        <Plus /> Add item
+        <Plus /> Add meal
       </>
     ),
   },
