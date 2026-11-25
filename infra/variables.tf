@@ -190,6 +190,53 @@ variable "ai_api_key_version" {
   default     = 0
 }
 
+variable "image_provider" {
+  description = "AI provider that makes meal pictures (TanStack AI adapter): openai or gemini."
+  type        = string
+  default     = "openai"
+
+  validation {
+    condition     = contains(["openai", "gemini"], var.image_provider)
+    error_message = "image_provider must be openai or gemini."
+  }
+}
+
+variable "image_model" {
+  description = "The provider's image model. Null: the default (gpt-image-2.5-flare for openai, gemini-3.1-flash-lite-image for gemini)."
+  type        = string
+  default     = null
+}
+
+variable "image_quality" {
+  description = "OpenAI image quality: low, medium or high. Cost per picture rises with it."
+  type        = string
+  default     = "low"
+
+  validation {
+    condition     = contains(["low", "medium", "high"], var.image_quality)
+    error_message = "image_quality must be low, medium or high."
+  }
+}
+
+variable "image_api_key" {
+  description = "API key of the image provider. From the IMAGE_API_KEY Actions secret; never stored in state."
+  type        = string
+  default     = null
+  sensitive   = true
+  ephemeral   = true
+
+  validation {
+    condition     = var.image_api_key_version == 0 || coalesce(var.image_api_key, "") != ""
+    error_message = "image_api_key_version is set: add the IMAGE_API_KEY Actions secret (the image provider's API key), or set the version to 0."
+  }
+}
+
+variable "image_api_key_version" {
+  description = "0: meals can't get generated pictures. Set to 1 (and bump on rotation or provider change) to send image_api_key to Vercel."
+  type        = number
+  default     = 0
+}
+
 variable "cookie_password_version" {
   description = "Bump to generate a new session cookie password. Signs everyone out."
   type        = number

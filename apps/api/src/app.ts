@@ -20,6 +20,10 @@ import { createHouseholdService } from './features/household/household.service.t
 import { mealsRouter } from './features/meals/meals.routes.ts';
 import { createMealsService } from './features/meals/meals.service.ts';
 import { createPostgresPhotoStore } from './features/meals/photo-store.ts';
+import {
+  createMealImageGenerator,
+  type MealImageGenerator,
+} from './features/meals/image-generator.ts';
 import { createRecipeReader, type RecipeReader } from './features/meals/recipe-reader.ts';
 import { mcpHandlers, mcpMetadataRouter } from './features/mcp/mcp.routes.ts';
 import { planRouter } from './features/plan/plan.routes.ts';
@@ -36,6 +40,8 @@ export interface AppDeps {
   workos?: WorkosSessions;
   /** Reads recipe photos. Defaults to the configured AI provider (AI_API_KEY); tests pass a fake. */
   recipeReader?: RecipeReader | null;
+  /** Makes meal pictures. Defaults to the configured image provider (IMAGE_API_KEY); tests pass a fake. */
+  imageGenerator?: MealImageGenerator | null;
 }
 
 /**
@@ -52,6 +58,7 @@ export function createApp({
   verifier: injected,
   workos: injectedWorkos,
   recipeReader,
+  imageGenerator,
 }: AppDeps): Express {
   const app = express();
   const verifier =
@@ -94,10 +101,21 @@ export function createApp({
               apiKey: config.AI_API_KEY,
             })
           : null,
+    images:
+      imageGenerator !== undefined
+        ? imageGenerator
+        : config.IMAGE_API_KEY
+          ? createMealImageGenerator({
+              provider: config.IMAGE_PROVIDER,
+              model: config.IMAGE_MODEL,
+              quality: config.IMAGE_QUALITY,
+              apiKey: config.IMAGE_API_KEY,
+            })
+          : null,
     // On Vercel, keep the function alive until the reading finishes; locally it just runs.
     background: (task) => (config.VERCEL ? waitUntil(task) : void task),
     onError: (error, context) => {
-      logger.error({ err: error, ...context }, 'reading a recipe photo failed');
+      logger.error({ err: error, ...context }, 'an AI call for a meal failed');
       Sentry.captureException(error, { extra: context });
     },
   });

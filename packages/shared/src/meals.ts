@@ -32,6 +32,8 @@ export const MealPhotoSchema = z.object({
   kind: PhotoKindSchema,
   /** Recipe photos only; null for meal photos. */
   readStatus: RecipeReadStatusSchema.nullable(),
+  /** True when an AI image model made it from the meal's details (meal photos only). */
+  generated: z.boolean(),
   /** API path that serves the image, e.g. /meals/3/photos/7. */
   path: z.string(),
   createdAt: z.iso.datetime(),
@@ -43,7 +45,10 @@ export const MealSummarySchema = z.object({
   id: z.number().int(),
   name: z.string(),
   tags: z.string().array(),
-  /** API path of the first photo of the dish (recipe photos are never the cover), or null. */
+  /**
+   * API path of the cover: the first real photo of the dish, else the first generated one
+   * (recipe photos are never the cover). Null when there are no photos of the dish.
+   */
   coverPhotoPath: z.string().nullable(),
 });
 export type MealSummary = z.infer<typeof MealSummarySchema>;
@@ -53,7 +58,10 @@ export const MealSchema = MealSummarySchema.extend({
   recipeUrl: z.string().nullable(),
   /** The recipe: read from recipe photos, or typed in. Null when there is none. */
   recipe: RecipeSchema.nullable(),
-  /** Photos of the dish and of the recipe, oldest first. */
+  /**
+   * Photos of the dish and of the recipe: real photos before generated ones, then oldest
+   * first, so the first photo of the dish is always its cover.
+   */
   photos: MealPhotoSchema.array(),
   /** The most recent night (up to today) this meal was the dinner, or null. */
   lastEatenOn: CalendarDateSchema.nullable(),

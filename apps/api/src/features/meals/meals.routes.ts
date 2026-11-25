@@ -75,6 +75,12 @@ export function mealsRouter(meals: MealsService, plan: PlanService): Router {
     },
   );
 
+  // Makes a picture of the dish with the configured image model (one paid request).
+  router.post('/:id/photos/generate', async (req, res) => {
+    const { id } = validate(MealIdParamsSchema, req.params);
+    res.status(201).json(await meals.generatePhoto(currentUserId(req), id));
+  });
+
   router.get('/:id/photos/:photoId', async (req, res) => {
     const { id, photoId } = validate(MealPhotoParamsSchema, req.params);
     const photo = await meals.photo(currentUserId(req), id, photoId);

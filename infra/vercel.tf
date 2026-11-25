@@ -65,10 +65,13 @@ resource "vercel_project_environment_variables" "api" {
         SENTRY_ENVIRONMENT        = "production"
         SENTRY_TRACES_SAMPLE_RATE = tostring(var.sentry_traces_sample_rate)
         AI_PROVIDER               = var.ai_provider
+        IMAGE_PROVIDER            = var.image_provider
+        IMAGE_QUALITY             = var.image_quality
       },
       # Vercel rejects empty values, so the allowlist is only set when it has entries.
       length(var.allowed_user_ids) > 0 ? { ALLOWED_USER_IDS = join(",", var.allowed_user_ids) } : {},
       var.ai_model != null ? { AI_MODEL = var.ai_model } : {},
+      var.image_model != null ? { IMAGE_MODEL = var.image_model } : {},
     ) : { key = key, value = value, target = local.production, sensitive = false }
   ]
 }
@@ -114,6 +117,18 @@ resource "vercel_project_environment_variable" "ai_api_key" {
   comment          = "API key of the AI provider that reads recipe photos (managed by Terraform)"
   value_wo         = var.ai_api_key
   value_wo_version = var.ai_api_key_version
+  target           = local.production
+  sensitive        = true
+}
+
+resource "vercel_project_environment_variable" "image_api_key" {
+  count = var.image_api_key_version > 0 ? 1 : 0
+
+  project_id       = vercel_project.api.id
+  key              = "IMAGE_API_KEY"
+  comment          = "API key of the AI provider that makes meal pictures (managed by Terraform)"
+  value_wo         = var.image_api_key
+  value_wo_version = var.image_api_key_version
   target           = local.production
   sensitive        = true
 }

@@ -49,6 +49,9 @@ export default defineConfig({
         WORKOS_COOKIE_PASSWORD: '',
         AUTHKIT_DOMAIN: '',
         ALLOWED_USER_IDS: '',
+        // Never call a paid AI model from tests: recipe reading and images are "not set up".
+        AI_API_KEY: '',
+        IMAGE_API_KEY: '',
       },
       reuseExistingServer: !isCI,
       timeout: 120_000,

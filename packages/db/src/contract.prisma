@@ -68,6 +68,8 @@ model MealPhoto {
   kind        String   @default("meal")
   // Recipe photos only: "reading", "done", "not_a_recipe", "failed" or "unavailable".
   readStatus  String?
+  // Meal photos only: true when an AI image model made it from the meal's details.
+  generated   Boolean  @default(false)
   contentType String
   data        Bytes
   createdAt   DateTime @default(now()) @onCreate(now())

@@ -1,5 +1,5 @@
 import type { Suggestion } from '@app/shared';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { cn } from 'cn';
 import { Plus, Search, Sparkles, X } from 'lucide-react';
@@ -18,14 +18,26 @@ import { householdQueryOptions } from '@/features/household/queries';
 import { MealCard } from '@/features/meals/meal-card';
 import { MealForm } from '@/features/meals/meal-form';
 import { MealThumb } from '@/features/meals/meal-thumb';
-import { fetchSuggestions, mealsQueryOptions, useCreateMeal } from '@/features/meals/queries';
+import type { NewMealPhotos } from '@/features/meals/new-meal-photos';
+import {
+  fetchSuggestions,
+  mealsQueryOptions,
+  uploadPhoto,
+  useCreateMeal,
+  useGeneratePhoto,
+} from '@/features/meals/queries';
 import { lastHad } from '@/lib/format';
+import { resizeImage } from '@/lib/resize-image';
 
 export function MealsPage() {
   const { data: meals } = useSuspenseQuery(mealsQueryOptions);
   const { data: household } = useSuspenseQuery(householdQueryOptions);
   const createMeal = useCreateMeal();
+  const generatePhoto = useGeneratePhoto();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
+  /** A new meal whose photos didn't all upload: the dialog says so before opening it. */
+  const [partlySaved, setPartlySaved] = useState<{ mealId: number; failed: number } | null>(null);
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -41,6 +53,41 @@ export function MealsPage() {
           text.toLowerCase().includes(needle),
         )),
   );
+
+  /**
+   * Saves a new meal, then its photos (dish first, then recipe pages in the order chosen, so
+   * they're read in that order), then starts a generated picture if asked for one. The
+   * meal's page shows the picture being made.
+   */
+  async function addMeal(
+    values: Parameters<typeof createMeal.mutateAsync>[0],
+    photos: NewMealPhotos,
+  ) {
+    const meal = await createMeal.mutateAsync(values);
+    let failed = 0;
+    for (const [kind, files] of [
+      ['meal', photos.meal],
+      ['recipe', photos.recipe],
+    ] as const) {
+      for (const file of files) {
+        try {
+          await uploadPhoto(meal.id, await resizeImage(file), kind);
+        } catch {
+          failed += 1;
+        }
+      }
+    }
+    if (photos.meal.length + photos.recipe.length > 0) {
+      await queryClient.invalidateQueries({ queryKey: ['meals'] });
+    }
+    if (photos.generate && photos.meal.length === 0) generatePhoto.mutate(meal.id);
+    if (failed > 0) {
+      setPartlySaved({ mealId: meal.id, failed });
+      return;
+    }
+    setCreating(false);
+    await navigate({ to: '/meals/$mealId', params: { mealId: meal.id } });
+  }
 
   async function surpriseMe() {
     const [pick] = await fetchSuggestions(household.today, 1, surprise ? [surprise.meal.id] : []);
@@ -166,21 +213,54 @@ export function MealsPage() {
         </ul>
       )}
 
-      <Dialog open={creating} onOpenChange={setCreating}>
+      <Dialog
+        open={creating}
+        onOpenChange={(open) => {
+          setCreating(open);
+          if (!open) setPartlySaved(null);
+        }}
+      >
         <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-md">
           <DialogHeader>
             <DialogTitle>New meal</DialogTitle>
-            <DialogDescription>You can add photos once it’s saved.</DialogDescription>
+            <DialogDescription>
+              {partlySaved
+                ? 'The meal is saved.'
+                : 'Add photos now or later. Recipe photos are read into the recipe.'}
+            </DialogDescription>
           </DialogHeader>
-          <MealForm
-            submitLabel="Add meal"
-            onCancel={() => setCreating(false)}
-            onSubmit={async (values) => {
-              const meal = await createMeal.mutateAsync(values);
-              setCreating(false);
-              await navigate({ to: '/meals/$mealId', params: { mealId: meal.id } });
-            }}
-          />
+          {partlySaved ? (
+            <div className="space-y-4">
+              <p role="alert" className="text-sm">
+                {partlySaved.failed === 1
+                  ? '1 photo couldn’t be added.'
+                  : `${partlySaved.failed} photos couldn’t be added.`}{' '}
+                Try adding {partlySaved.failed === 1 ? 'it' : 'them'} again from the meal’s page, as
+                JPEG or PNG.
+              </p>
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => {
+                    setCreating(false);
+                    setPartlySaved(null);
+                    void navigate({
+                      to: '/meals/$mealId',
+                      params: { mealId: partlySaved.mealId },
+                    });
+                  }}
+                >
+                  Open the meal
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <MealForm
+              submitLabel="Add meal"
+              withPhotos
+              onCancel={() => setCreating(false)}
+              onSubmit={addMeal}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

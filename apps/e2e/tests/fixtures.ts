@@ -8,6 +8,11 @@ import { API_URL } from '../playwright.config.ts';
 interface Options {
   /** Sign the page in before the test (default). `test.use({ signedIn: false })` to opt out. */
   signedIn: boolean;
+  /**
+   * Console errors this test expects, e.g. the failed request of an error state it checks:
+   * `test.use({ expectedConsoleErrors: [/status of 503/] })`. Anything else still fails.
+   */
+  expectedConsoleErrors: RegExp[];
 }
 
 interface Fixtures {
@@ -28,6 +33,7 @@ const DEV_SESSION_COOKIE = 'app_dev_session';
  */
 export const test = base.extend<Fixtures & Options>({
   signedIn: [true, { option: true }],
+  expectedConsoleErrors: [[], { option: true }],
 
   user: async ({ playwright }, use) => {
     const http = await playwright.request.newContext({ baseURL: API_URL });
@@ -46,7 +52,7 @@ export const test = base.extend<Fixtures & Options>({
     await http.dispose();
   },
 
-  page: async ({ page, signedIn, user, baseURL }, use) => {
+  page: async ({ page, signedIn, expectedConsoleErrors, user, baseURL }, use) => {
     if (signedIn) {
       // The same session cookie the API's dev sign-in sets (the web app reaches the API at /api).
       await page
@@ -56,7 +62,9 @@ export const test = base.extend<Fixtures & Options>({
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(`page error: ${error.message}`));
     page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(`console error: ${message.text()}`);
+      if (message.type() !== 'error') return;
+      if (expectedConsoleErrors.some((pattern) => pattern.test(message.text()))) return;
+      errors.push(`console error: ${message.text()}`);
     });
     await use(page);
     expect(errors, 'the browser reported errors').toEqual([]);

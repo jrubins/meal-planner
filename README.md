@@ -21,6 +21,14 @@ options you're deciding between, and your meal library with photos.
   [TanStack AI](https://tanstack.com/ai), so the provider is a setting: `AI_PROVIDER`
   (`anthropic`, `openai` or `gemini`), `AI_MODEL` and `AI_API_KEY`
   (`apps/api/src/features/meals/recipe-reader.ts`). Without a key, recipe photos are kept unread.
+- **Pictures:** photos of the dish and of the recipe can be added while creating a meal. A meal
+  without a photo can get one made by an AI image model from its name, notes, tags and
+  recipe (**Generate one**, on a new or existing meal, or `generate_meal_photo` in chat).
+  Generated pictures are labelled "AI image", and a real photo is always the cover when there
+  is one. Only made on request: each picture is one paid request (about 0.6¢ with OpenAI's
+  gpt-image-2.5-flare at low quality). Settings: `IMAGE_PROVIDER` (`openai` or `gemini`),
+  `IMAGE_MODEL`, `IMAGE_QUALITY` and `IMAGE_API_KEY`
+  (`apps/api/src/features/meals/image-generator.ts`).
 - **Inspiration:** suggestions favour meals you haven't had for a while and skip ones already in
   the week. **Shuffle** suggests one meal for a night; **Fill empty nights** adds two options to
   every unplanned night, ready to vote on. **Surprise me** on the Meals page picks one at random.
