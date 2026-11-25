@@ -179,7 +179,7 @@ variable "ai_api_key" {
   ephemeral   = true
 
   validation {
-    condition     = var.ai_api_key_version == 0 || coalesce(var.ai_api_key, "") != ""
+    condition     = var.ai_api_key_version == 0 || try(length(var.ai_api_key) > 0, false)
     error_message = "ai_api_key_version is set: add the AI_API_KEY Actions secret (the provider's API key), or set the version to 0."
   }
 }
@@ -226,7 +226,7 @@ variable "image_api_key" {
   ephemeral   = true
 
   validation {
-    condition     = var.image_api_key_version == 0 || coalesce(var.image_api_key, "") != ""
+    condition     = var.image_api_key_version == 0 || try(length(var.image_api_key) > 0, false)
     error_message = "image_api_key_version is set: add the IMAGE_API_KEY Actions secret (the image provider's API key), or set the version to 0."
   }
 }
