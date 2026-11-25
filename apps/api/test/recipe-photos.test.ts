@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
+  ApiErrorSchema,
+  currentAdjustedSteps,
   MealPhotoSchema,
   MealSchema,
   RecipeInputSchema,
@@ -33,6 +35,13 @@ const fakeReader: RecipeReader = {
     }
     const json = instruction.replace(/^RECIPE /, '');
     return { isRecipe: true, recipe: RecipeInputSchema.parse(JSON.parse(json)) };
+  },
+  // Drops steps that mention a left-out ingredient; a step saying FAIL makes it fail.
+  async adjustSteps(recipe) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    if (recipe.steps.some((step) => step.includes('FAIL'))) throw new Error('simulated failure');
+    const leftOut = recipe.ingredients.filter((i) => i.excluded).map((i) => i.item);
+    return recipe.steps.filter((step) => !leftOut.some((item) => step.includes(item)));
   },
 };
 
@@ -132,11 +141,12 @@ describe('recipe photos', () => {
       prepTime: null,
       cookTime: null,
       ingredients: [
-        { section: null, amount: '2', item: 'eggs', note: null },
-        { section: null, amount: null, item: 'salt', note: 'a pinch' },
+        { section: null, amount: '2', item: 'eggs', note: null, excluded: false },
+        { section: null, amount: null, item: 'salt', note: 'a pinch', excluded: false },
       ],
       steps: ['Whisk.', 'Fry.'],
       notes: null,
+      adjustedSteps: null,
     });
     expect(read.photos[0]?.readStatus).toBe('done');
   });
@@ -252,9 +262,12 @@ describe('structured recipes', () => {
       servings: null,
       prepTime: null,
       cookTime: null,
-      ingredients: [{ section: 'For the rice', amount: '1 pinch', item: spice, note: null }],
+      ingredients: [
+        { section: 'For the rice', amount: '1 pinch', item: spice, note: null, excluded: false },
+      ],
       steps: ['Toast the rice.'],
       notes: null,
+      adjustedSteps: null,
     });
 
     const found = await request(app)
@@ -313,6 +326,129 @@ describe('structured recipes', () => {
     expect((await getMeal(auth, meal.id)).recipe).toMatchObject({
       notes: legacy,
       steps: ['Cook.'],
+    });
+  });
+});
+
+describe('leaving out ingredients', () => {
+  const recipe = {
+    ingredients: [{ item: 'chicken' }, { item: 'cream' }, { item: 'butter' }],
+    steps: ['Brown the chicken.', 'Stir in the cream.', 'Melt the butter.'],
+  };
+
+  async function setIngredients(auth: string, mealId: number, excluded: string[]) {
+    const meal = await getMeal(auth, mealId);
+    const current = meal.recipe;
+    if (!current) throw new Error('expected a recipe');
+    const res = await request(app)
+      .patch(`/meals/${mealId}`)
+      .set('Authorization', auth)
+      .send({
+        recipe: {
+          ...current,
+          ingredients: current.ingredients.map((i) => ({
+            ...i,
+            excluded: excluded.includes(i.item),
+          })),
+        },
+      })
+      .expect(200);
+    return MealSchema.parse(res.body);
+  }
+
+  const adjust = (auth: string, mealId: number) =>
+    request(app).post(`/meals/${mealId}/recipe/adjust`).set('Authorization', auth);
+
+  it('marks ingredients as left out, and adjusts the steps on request', async () => {
+    const { auth } = await asNewUser();
+    const meal = await createMeal(auth, { name: unique('Tikka'), recipe });
+
+    const marked = await setIngredients(auth, meal.id, ['cream']);
+    expect(marked.recipe?.ingredients.map((i) => i.excluded)).toEqual([false, true, false]);
+    expect(marked.recipe?.adjustedSteps).toBeNull();
+
+    const res = await adjust(auth, meal.id).expect(200);
+    const adjusted = MealSchema.parse(res.body).recipe;
+    expect(adjusted?.adjustedSteps).toEqual({
+      steps: ['Brown the chicken.', 'Melt the butter.'],
+      leftOut: ['cream'],
+    });
+    // The original steps are kept.
+    expect(adjusted?.steps).toEqual(recipe.steps);
+    expect(adjusted && currentAdjustedSteps(adjusted)).toEqual([
+      'Brown the chicken.',
+      'Melt the butter.',
+    ]);
+  });
+
+  it('treats adjusted steps as out of date once what’s left out changes', async () => {
+    const { auth } = await asNewUser();
+    const meal = await createMeal(auth, { name: unique('Tikka'), recipe });
+    await setIngredients(auth, meal.id, ['cream']);
+    await adjust(auth, meal.id).expect(200);
+
+    const changed = await setIngredients(auth, meal.id, ['cream', 'butter']);
+    expect(changed.recipe && currentAdjustedSteps(changed.recipe)).toBeNull();
+
+    const res = await adjust(auth, meal.id).expect(200);
+    expect(MealSchema.parse(res.body).recipe?.adjustedSteps?.steps).toEqual(['Brown the chicken.']);
+  });
+
+  it('needs something left out', async () => {
+    const { auth } = await asNewUser();
+    const meal = await createMeal(auth, { name: unique('Tikka'), recipe });
+    const res = await adjust(auth, meal.id).expect(400);
+    expect(ApiErrorSchema.parse(res.body).error.code).toBe('nothing_left_out');
+  });
+
+  it('reports a failed rewrite and keeps the recipe as it was', async () => {
+    const { auth } = await asNewUser();
+    const meal = await createMeal(auth, {
+      name: unique('Tikka'),
+      recipe: { ...recipe, steps: [...recipe.steps, 'FAIL'] },
+    });
+    await setIngredients(auth, meal.id, ['cream']);
+    const res = await adjust(auth, meal.id).expect(502);
+    expect(ApiErrorSchema.parse(res.body).error.code).toBe('ai_failed');
+    expect((await getMeal(auth, meal.id)).recipe?.adjustedSteps).toBeNull();
+  });
+
+  it('says so when adjusting isn’t set up', async () => {
+    const auth = await bearer(uniqueUserId());
+    const created = await request(unread.app)
+      .post('/meals')
+      .set('Authorization', auth)
+      .send({
+        name: unique('Tikka'),
+        recipe: { ...recipe, ingredients: [{ item: 'cream', excluded: true }] },
+      })
+      .expect(201);
+    const res = await request(unread.app)
+      .post(`/meals/${MealSchema.parse(created.body).id}/recipe/adjust`)
+      .set('Authorization', auth)
+      .expect(503);
+    expect(ApiErrorSchema.parse(res.body).error.code).toBe('ai_unavailable');
+  });
+
+  it('reads recipes stored before ingredients could be left out', async () => {
+    const { auth } = await asNewUser();
+    const meal = await createMeal(auth);
+    // As stored by the previous version: no `excluded`, no `adjustedSteps`.
+    await db.orm.public.Meal.where({ id: meal.id }).update({
+      recipe: {
+        title: 'Old',
+        servings: null,
+        prepTime: null,
+        cookTime: null,
+        ingredients: [{ section: null, amount: '1', item: 'egg', note: null, excluded: false }],
+        steps: ['Boil.'],
+        notes: null,
+      },
+    });
+    expect((await getMeal(auth, meal.id)).recipe).toMatchObject({
+      title: 'Old',
+      ingredients: [{ item: 'egg', excluded: false }],
+      adjustedSteps: null,
     });
   });
 });

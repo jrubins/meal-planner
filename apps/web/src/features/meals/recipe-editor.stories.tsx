@@ -30,9 +30,12 @@ export const NewRecipe: Story = {
       servings: '2',
       prepTime: null,
       cookTime: null,
-      ingredients: [{ section: null, amount: '200 g', item: 'spaghetti', note: null }],
+      ingredients: [
+        { section: null, amount: '200 g', item: 'spaghetti', note: null, excluded: false },
+      ],
       steps: ['Boil the pasta.'],
       notes: null,
+      adjustedSteps: null,
     });
   },
 };

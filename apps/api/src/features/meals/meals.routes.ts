@@ -46,6 +46,11 @@ export function mealsRouter(meals: MealsService, plan: PlanService): Router {
     res.json(await meals.update(currentUserId(req), id, input));
   });
 
+  router.post('/:id/recipe/adjust', async (req, res) => {
+    const { id } = validate(MealIdParamsSchema, req.params);
+    res.json(await meals.adjustSteps(currentUserId(req), id));
+  });
+
   router.delete('/:id', async (req, res) => {
     const { id } = validate(MealIdParamsSchema, req.params);
     await meals.remove(currentUserId(req), id);

@@ -16,8 +16,20 @@ export const RecipeIngredientSchema = z.object({
   item: z.string(),
   /** e.g. "finely chopped", "or ghee". */
   note: nullableText,
+  /** The household leaves this one out when they cook it. */
+  excluded: z.boolean(),
 });
 export type RecipeIngredient = z.infer<typeof RecipeIngredientSchema>;
+
+/**
+ * The steps rewritten to leave out the excluded ingredients, and which ingredients they
+ * were rewritten for: once what's left out changes, they are out of date.
+ */
+export const AdjustedStepsSchema = z.object({
+  steps: z.string().array(),
+  leftOut: z.string().array(),
+});
+export type AdjustedSteps = z.infer<typeof AdjustedStepsSchema>;
 
 export const RecipeSchema = z.object({
   title: nullableText,
@@ -27,6 +39,8 @@ export const RecipeSchema = z.object({
   ingredients: RecipeIngredientSchema.array(),
   steps: z.string().array(),
   notes: nullableText,
+  /** The steps adjusted for the left-out ingredients; the original steps stay in `steps`. */
+  adjustedSteps: AdjustedStepsSchema.nullable(),
 });
 export type Recipe = z.infer<typeof RecipeSchema>;
 
@@ -47,6 +61,10 @@ export const RecipeIngredientInputSchema = z.object({
   amount: optionalText(60).describe('Quantity as written, e.g. "2 tbsp", "400 g", "a pinch"'),
   item: z.string().trim().min(1, 'Ingredient is required').max(200).describe('e.g. "garam masala"'),
   note: optionalText(200).describe('e.g. "finely chopped", "or ghee"'),
+  excluded: z
+    .boolean()
+    .default(false)
+    .describe('True when the household leaves this ingredient out'),
 });
 export type RecipeIngredientInput = z.input<typeof RecipeIngredientInputSchema>;
 
@@ -63,6 +81,9 @@ export const RecipeInputSchema = z.object({
     .default([])
     .describe('In order, without numbers'),
   notes: optionalText(5000).describe('Tips, variations, storage'),
+  adjustedSteps: AdjustedStepsSchema.nullable()
+    .default(null)
+    .describe('Set by adjust_recipe_steps; leave as returned'),
 });
 export type RecipeInput = z.input<typeof RecipeInputSchema>;
 
@@ -74,6 +95,7 @@ export const EMPTY_RECIPE: Recipe = {
   ingredients: [],
   steps: [],
   notes: null,
+  adjustedSteps: null,
 };
 
 /** True when a recipe holds nothing worth keeping. */
@@ -104,7 +126,28 @@ export function mergeRecipes(current: Recipe | null, page: Recipe): Recipe {
     ingredients: [...current.ingredients, ...page.ingredients],
     steps: [...current.steps, ...page.steps],
     notes: [current.notes, page.notes].filter(Boolean).join('\n\n') || null,
+    // New steps make any adjusted version incomplete.
+    adjustedSteps: page.steps.length > 0 ? null : current.adjustedSteps,
   };
+}
+
+/** The ingredients the household leaves out, by name. */
+export function leftOutIngredients(recipe: Recipe): string[] {
+  return recipe.ingredients.filter((i) => i.excluded).map((i) => i.item);
+}
+
+/**
+ * The adjusted steps, when there are ingredients left out and the steps were adjusted for
+ * exactly those; otherwise null (nothing left out, never adjusted, or out of date).
+ */
+export function currentAdjustedSteps(recipe: Recipe): string[] | null {
+  const leftOut = leftOutIngredients(recipe);
+  const adjusted = recipe.adjustedSteps;
+  if (leftOut.length === 0 || !adjusted) return null;
+  const same =
+    adjusted.leftOut.length === leftOut.length &&
+    [...adjusted.leftOut].sort().every((item, i) => item === [...leftOut].sort()[i]);
+  return same ? adjusted.steps : null;
 }
 
 /** The recipe's words in one string, for search. */

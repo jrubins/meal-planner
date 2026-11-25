@@ -88,13 +88,19 @@ export const SAMPLE_RECIPE: Recipe = {
   prepTime: '20 min + overnight',
   cookTime: '40 min',
   ingredients: [
-    { section: 'Marinade', amount: '600 g', item: 'chicken thighs', note: 'cut into chunks' },
-    { section: 'Marinade', amount: '200 g', item: 'plain yogurt', note: null },
-    { section: 'Marinade', amount: '1 tbsp', item: 'garam masala', note: null },
-    { section: 'Sauce', amount: '2 tbsp', item: 'butter', note: 'or ghee' },
-    { section: 'Sauce', amount: '1', item: 'onion', note: 'finely chopped' },
-    { section: 'Sauce', amount: '400 g', item: 'crushed tomatoes', note: null },
-    { section: 'Sauce', amount: '150 ml', item: 'double cream', note: null },
+    {
+      section: 'Marinade',
+      amount: '600 g',
+      item: 'chicken thighs',
+      note: 'cut into chunks',
+      excluded: false,
+    },
+    { section: 'Marinade', amount: '200 g', item: 'plain yogurt', note: null, excluded: false },
+    { section: 'Marinade', amount: '1 tbsp', item: 'garam masala', note: null, excluded: false },
+    { section: 'Sauce', amount: '2 tbsp', item: 'butter', note: 'or ghee', excluded: false },
+    { section: 'Sauce', amount: '1', item: 'onion', note: 'finely chopped', excluded: false },
+    { section: 'Sauce', amount: '400 g', item: 'crushed tomatoes', note: null, excluded: false },
+    { section: 'Sauce', amount: '150 ml', item: 'double cream', note: null, excluded: false },
   ],
   steps: [
     'Mix the marinade ingredients with the chicken and leave overnight in the fridge.',
@@ -103,4 +109,5 @@ export const SAMPLE_RECIPE: Recipe = {
     'Stir in the cream and the chicken and simmer for 5 more minutes.',
   ],
   notes: 'Serve with basmati rice and naan. Freezes well.',
+  adjustedSteps: null,
 };

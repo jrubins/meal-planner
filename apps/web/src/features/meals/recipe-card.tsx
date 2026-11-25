@@ -1,17 +1,53 @@
-import { groupIngredients, type Recipe } from '@app/shared';
-import { Clock, Users } from 'lucide-react';
+import {
+  currentAdjustedSteps,
+  groupIngredients,
+  leftOutIngredients,
+  type Recipe,
+} from '@app/shared';
+import { cn } from 'cn';
+import { CircleMinus, CirclePlus, Clock, LoaderCircle, Users, WandSparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+
+export interface RecipeCardProps {
+  recipe: Recipe;
+  /** Leaves an ingredient out, or includes it again. Without it the card is read-only. */
+  onToggleIngredient?: (index: number) => void;
+  /** Rewrites the steps for the left-out ingredients. */
+  onAdjustSteps?: () => void;
+  adjusting?: boolean;
+  /** Why the last adjustment failed, if it did. */
+  adjustError?: string | null;
+}
+
+/** "cream", "cream and butter", "cream, butter and onion". */
+const listOf = (items: string[]) =>
+  items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`;
 
 /**
  * A recipe laid out for reading: title, servings and times, ingredients, steps, notes. When
  * the card is wide enough (a container query, e.g. the right column of a meal on desktop),
  * the ingredients sit beside the steps and stay in view while the steps scroll.
+ *
+ * Ingredients the household leaves out are struck through. Once the steps have been
+ * adjusted for exactly those, the adjusted steps show, with the originals a click away.
  */
-export function RecipeCard({ recipe }: { recipe: Recipe }) {
+export function RecipeCard({
+  recipe,
+  onToggleIngredient,
+  onAdjustSteps,
+  adjusting = false,
+  adjustError = null,
+}: RecipeCardProps) {
+  const [showOriginal, setShowOriginal] = useState(false);
   const facts = [
     recipe.servings ? { icon: Users, label: 'Serves', value: recipe.servings } : null,
     recipe.prepTime ? { icon: Clock, label: 'Prep', value: recipe.prepTime } : null,
     recipe.cookTime ? { icon: Clock, label: 'Cook', value: recipe.cookTime } : null,
   ].filter((fact) => fact !== null);
+  const leftOut = leftOutIngredients(recipe);
+  const adjusted = currentAdjustedSteps(recipe);
+  const steps = adjusted && !showOriginal ? adjusted : recipe.steps;
 
   return (
     <div className="@container space-y-5">
@@ -44,27 +80,58 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
             <h3 id="ingredients-heading" className="text-sm font-semibold tracking-wide uppercase">
               Ingredients
             </h3>
-            {groupIngredients(recipe.ingredients).map((group, index) => (
-              <div key={index} className="space-y-1">
+            {groupIngredients(recipe.ingredients).map((group, groupIndex) => (
+              <div key={groupIndex} className="space-y-1">
                 {group.section ? (
                   <h4 className="text-muted-foreground pt-1 text-sm font-medium">
                     {group.section}
                   </h4>
                 ) : null}
                 <ul className="space-y-1">
-                  {group.items.map((ingredient, i) => (
-                    <li key={i} className="flex gap-3 border-b border-dashed pb-1 last:border-0">
-                      <span className="text-muted-foreground w-20 shrink-0 text-right tabular-nums">
-                        {ingredient.amount}
-                      </span>
-                      <span>
-                        {ingredient.item}
-                        {ingredient.note ? (
-                          <span className="text-muted-foreground">, {ingredient.note}</span>
+                  {group.items.map((ingredient) => {
+                    const index = recipe.ingredients.indexOf(ingredient);
+                    return (
+                      <li
+                        key={index}
+                        className="flex items-center gap-3 border-b border-dashed pb-1 last:border-0"
+                      >
+                        <span
+                          className={cn(
+                            'text-muted-foreground w-20 shrink-0 text-right tabular-nums',
+                            ingredient.excluded && 'line-through',
+                          )}
+                        >
+                          {ingredient.amount}
+                        </span>
+                        <span
+                          className={cn(
+                            'flex-1',
+                            ingredient.excluded && 'text-muted-foreground line-through',
+                          )}
+                        >
+                          {ingredient.item}
+                          {ingredient.note ? (
+                            <span className="text-muted-foreground">, {ingredient.note}</span>
+                          ) : null}
+                          {ingredient.excluded ? (
+                            <span className="sr-only"> (left out)</span>
+                          ) : null}
+                        </span>
+                        {onToggleIngredient ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground size-7 shrink-0"
+                            aria-label={`${ingredient.excluded ? 'Include' : 'Leave out'} ${ingredient.item}`}
+                            title={ingredient.excluded ? 'Include it again' : 'Leave it out'}
+                            onClick={() => onToggleIngredient(index)}
+                          >
+                            {ingredient.excluded ? <CirclePlus /> : <CircleMinus />}
+                          </Button>
                         ) : null}
-                      </span>
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
@@ -72,12 +139,42 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
         ) : null}
 
         {recipe.steps.length > 0 ? (
-          <section aria-labelledby="steps-heading" className="space-y-2">
+          <section aria-labelledby="steps-heading" className="space-y-3">
             <h3 id="steps-heading" className="text-sm font-semibold tracking-wide uppercase">
               Steps
             </h3>
+            {leftOut.length > 0 ? (
+              <div className="bg-secondary/70 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg px-3 py-2 text-sm">
+                <p className="text-muted-foreground flex-1">
+                  {adjusted
+                    ? showOriginal
+                      ? 'The original steps.'
+                      : `Adjusted to leave out ${listOf(leftOut)}.`
+                    : `Leaving out ${listOf(leftOut)}: the steps still mention ${leftOut.length > 1 ? 'them' : 'it'}.`}
+                </p>
+                {adjusted ? (
+                  <Button variant="ghost" size="sm" onClick={() => setShowOriginal(!showOriginal)}>
+                    {showOriginal ? 'Show adjusted' : 'Show original'}
+                  </Button>
+                ) : onAdjustSteps ? (
+                  <Button variant="outline" size="sm" disabled={adjusting} onClick={onAdjustSteps}>
+                    {adjusting ? (
+                      <LoaderCircle className="animate-spin" aria-hidden />
+                    ) : (
+                      <WandSparkles aria-hidden />
+                    )}
+                    {adjusting ? 'Adjusting…' : 'Adjust steps'}
+                  </Button>
+                ) : null}
+                {adjustError ? (
+                  <p role="alert" className="text-destructive w-full">
+                    {adjustError}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             <ol className="space-y-3">
-              {recipe.steps.map((step, index) => (
+              {steps.map((step, index) => (
                 <li key={index} className="flex gap-3">
                   <span
                     aria-hidden

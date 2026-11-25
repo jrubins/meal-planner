@@ -17,7 +17,7 @@ options you're deciding between, and your meal library with photos.
   storage later without changing the API.
 - **Recipes:** each meal can have photos of the dish and photos of its recipe (a cookbook page,
   a card, a screenshot). An AI model (Claude by default) reads each recipe photo in the background and adds the recipe
-  to the meal as a structured recipe (title, servings, times, ingredients by section, steps, notes), which you can edit and Claude can read back in chat. Reading goes through
+  to the meal as a structured recipe (title, servings, times, ingredients by section, steps, notes), which you can edit and Claude can read back in chat. Ingredients you never use can be left out (struck through on the card), and **Adjust steps** has the model rewrite the steps without them, keeping the original steps a click away. Reading goes through
   [TanStack AI](https://tanstack.com/ai), so the provider is a setting: `AI_PROVIDER`
   (`anthropic`, `openai` or `gemini`), `AI_MODEL` and `AI_API_KEY`
   (`apps/api/src/features/meals/recipe-reader.ts`). Without a key, recipe photos are kept unread.
@@ -40,7 +40,7 @@ The API is also an MCP server (`/mcp`). Add it to Claude as a custom connector (
 The tools (`apps/api/src/features/mcp/mcp.tools.ts`): `get_household`, `update_household`,
 `set_my_name`, `get_week`, `plan_dinner`, `clear_dinner`, `propose_options`, `remove_option`,
 `vote_on_option`, `choose_option`, `suggest_meals`, `shuffle_week`, `list_meals`, `get_meal`,
-`create_meal`, `update_meal` and `delete_meal`. Meals can be named instead of looked up by ID,
+`create_meal`, `update_meal`, `adjust_recipe_steps` and `delete_meal`. Meals can be named instead of looked up by ID,
 and the server sends Claude short instructions on how the plan works. Photos are added in the
 web app.
 

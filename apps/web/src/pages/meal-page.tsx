@@ -20,13 +20,14 @@ import {
   mealQueryOptions,
   useDeleteMeal,
   useDeletePhoto,
+  useAdjustSteps,
   useRereadPhoto,
   useUpdateMeal,
   useUploadPhoto,
 } from '@/features/meals/queries';
 import { RecipeEditor } from '@/features/meals/recipe-editor';
 import { RecipeSection } from '@/features/meals/recipe-section';
-import { apiUrl } from '@/lib/api';
+import { ApiRequestError, apiUrl } from '@/lib/api';
 import { lastEaten, monthDay } from '@/lib/format';
 import { resizeImage } from '@/lib/resize-image';
 
@@ -38,6 +39,7 @@ export function MealPage({ mealId }: { mealId: number }) {
   const uploadPhoto = useUploadPhoto(mealId);
   const deletePhoto = useDeletePhoto(mealId);
   const rereadPhoto = useRereadPhoto(mealId);
+  const adjustSteps = useAdjustSteps(mealId);
   const navigate = useNavigate();
   const fileInput = useRef<HTMLInputElement>(null);
   const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null);
@@ -218,6 +220,27 @@ export function MealPage({ mealId }: { mealId: number }) {
           onReread={(photoId) => rereadPhoto.mutate(photoId)}
           onDeletePhoto={(photoId) => deletePhoto.mutate(photoId)}
           onEdit={() => setEditingRecipe(true)}
+          onToggleIngredient={(index) => {
+            if (!meal.recipe) return;
+            adjustSteps.reset();
+            updateMeal.mutate({
+              recipe: {
+                ...meal.recipe,
+                ingredients: meal.recipe.ingredients.map((ingredient, i) =>
+                  i === index ? { ...ingredient, excluded: !ingredient.excluded } : ingredient,
+                ),
+              },
+            });
+          }}
+          onAdjustSteps={() => adjustSteps.mutate()}
+          adjusting={adjustSteps.isPending}
+          adjustError={
+            adjustSteps.error instanceof ApiRequestError
+              ? adjustSteps.error.message
+              : adjustSteps.error
+                ? 'Couldn’t adjust the steps. Try again.'
+                : null
+          }
         />
       </div>
 

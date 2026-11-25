@@ -4,9 +4,12 @@ import { Check, FileText, LoaderCircle, RotateCw, Trash2, TriangleAlert } from '
 import { useRef, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { apiUrl } from '@/lib/api';
-import { RecipeCard } from './recipe-card';
+import { RecipeCard, type RecipeCardProps } from './recipe-card';
 
-interface RecipeSectionProps {
+interface RecipeSectionProps extends Pick<
+  RecipeCardProps,
+  'onToggleIngredient' | 'onAdjustSteps' | 'adjusting' | 'adjustError'
+> {
   /** The recipe, or null when there is none yet. */
   recipe: Recipe | null;
   /** The meal's recipe photos (photos of the dish are shown elsewhere). */
@@ -58,6 +61,7 @@ export function RecipeSection({
   onReread,
   onDeletePhoto,
   onEdit,
+  ...cardProps
 }: RecipeSectionProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const reading = photos.some((photo) => photo.readStatus === 'reading');
@@ -97,7 +101,7 @@ export function RecipeSection({
       </div>
 
       {recipe ? (
-        <RecipeCard recipe={recipe} />
+        <RecipeCard recipe={recipe} {...cardProps} />
       ) : (
         <p className="text-muted-foreground text-sm">
           {reading
