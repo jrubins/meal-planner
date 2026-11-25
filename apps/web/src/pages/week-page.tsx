@@ -133,9 +133,9 @@ export function WeekPage({ date }: WeekPageProps) {
         </p>
       ) : null}
 
-      {/* A list on phones; a board on wider screens, up to all seven nights side by side.
-          Cards in a row stretch to the same height (see NightCard). */}
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+      {/* One night per row at every width: an agenda. Wide rows lay out as day, plan and
+          actions side by side (see NightCard). */}
+      <div className="grid gap-3">
         {week.nights.map((night) => (
           <NightCard
             key={night.date}
