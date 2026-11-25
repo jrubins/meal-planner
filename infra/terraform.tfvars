@@ -33,5 +33,13 @@ ai_provider        = "anthropic"
 ai_model           = "claude-haiku-5-5"
 ai_api_key_version = 2
 
+# Generated meal pictures (TanStack AI). OpenAI's gpt-image-2.5-flare at low quality is about
+# 0.6¢ a picture, made only when someone taps "Generate". Use image_quality = "medium" (~1.3¢)
+# for more detail. To switch provider: change image_provider (and image_model if needed), put
+# that provider's key in the IMAGE_API_KEY Actions secret, and bump image_api_key_version.
+image_provider        = "openai"
+image_quality         = "low"
+image_api_key_version = 1
+
 # Once you've both signed in, add both WorkOS user IDs to lock the app to the two of you:
 allowed_user_ids = []

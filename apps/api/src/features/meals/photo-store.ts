@@ -6,6 +6,7 @@ export interface StoredPhoto {
   mealId: number;
   kind: string;
   readStatus: string | null;
+  generated: boolean;
   createdAt: Date;
 }
 
@@ -26,6 +27,8 @@ export interface PhotoStore {
     mealId: number;
     kind: PhotoKind;
     readStatus: RecipeReadStatus | null;
+    /** Made by an AI image model rather than uploaded. */
+    generated?: boolean;
     contentType: PhotoContentType;
     data: Uint8Array;
   }): Promise<StoredPhoto>;
@@ -42,12 +45,13 @@ export interface PhotoStore {
 export function createPostgresPhotoStore(db: Db): PhotoStore {
   const Photos = db.orm.public.MealPhoto;
   return {
-    async save({ householdId, mealId, kind, readStatus, contentType, data }) {
-      return Photos.select('id', 'mealId', 'kind', 'readStatus', 'createdAt').create({
+    async save({ householdId, mealId, kind, readStatus, generated = false, contentType, data }) {
+      return Photos.select('id', 'mealId', 'kind', 'readStatus', 'generated', 'createdAt').create({
         householdId,
         mealId,
         kind,
         readStatus,
+        generated,
         contentType,
         data,
       });
@@ -57,7 +61,7 @@ export function createPostgresPhotoStore(db: Db): PhotoStore {
       if (mealIds.length === 0) return [];
       return Photos.where({ householdId })
         .where((p) => p.mealId.in([...mealIds]))
-        .select('id', 'mealId', 'kind', 'readStatus', 'createdAt')
+        .select('id', 'mealId', 'kind', 'readStatus', 'generated', 'createdAt')
         .orderBy([(p) => p.createdAt.asc(), (p) => p.id.asc()])
         .limit(2000)
         .all();

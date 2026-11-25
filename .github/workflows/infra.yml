@@ -34,6 +34,7 @@ env:
   TF_VAR_sentry_sourcemaps_token: ${{ secrets.SENTRY_SOURCEMAPS_TOKEN }}
   TF_VAR_workos_api_key: ${{ secrets.WORKOS_API_KEY }}
   TF_VAR_ai_api_key: ${{ secrets.AI_API_KEY }}
+  TF_VAR_image_api_key: ${{ secrets.IMAGE_API_KEY }}
 
 defaults:
   run:

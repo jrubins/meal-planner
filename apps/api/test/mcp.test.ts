@@ -55,6 +55,7 @@ describe('MCP endpoint', () => {
         'list_meals',
         'create_meal',
         'adjust_recipe_steps',
+        'generate_meal_photo',
       ]),
     );
     expect(client.getInstructions()).toContain('YYYY-MM-DD');

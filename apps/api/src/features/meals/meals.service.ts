@@ -25,13 +25,16 @@ import {
 } from '@app/shared';
 import { HttpError, notFound } from '../../lib/http-error.ts';
 import type { HouseholdService } from '../household/household.service.ts';
+import type { MealImageGenerator } from './image-generator.ts';
 import type { PhotoContent, PhotoStore, StoredPhoto } from './photo-store.ts';
 import type { RecipeReader } from './recipe-reader.ts';
 
-/** How recipe photos are read into text. */
-export interface RecipeReading {
+/** The AI work on meals: reading recipe photos, adjusting steps, making pictures. */
+export interface MealsAi {
   /** Null when recipe reading isn't configured (no AI_API_KEY): photos are kept unread. */
   reader: RecipeReader | null;
+  /** Null when meal pictures aren't configured (no IMAGE_API_KEY). */
+  images: MealImageGenerator | null;
   /** Runs work after the response is sent (Vercel's waitUntil in production). */
   background: (task: Promise<void>) => void;
   /** Reports a failed AI call (logged and sent to Sentry by the caller). */
@@ -57,6 +60,7 @@ const toMealPhoto = (photo: StoredPhoto): MealPhoto => ({
   id: photo.id,
   kind: PhotoKindSchema.catch('meal').parse(photo.kind),
   readStatus: RecipeReadStatusSchema.nullable().catch(null).parse(photo.readStatus),
+  generated: photo.generated,
   path: photoPath(photo),
   createdAt: photo.createdAt.toISOString(),
 });
@@ -120,7 +124,7 @@ export function createMealsService(
   db: Db,
   households: HouseholdService,
   photos: PhotoStore,
-  recipes: RecipeReading,
+  recipes: MealsAi,
 ) {
   const Meals = db.orm.public.Meal;
 
@@ -219,6 +223,10 @@ export function createMealsService(
       list.push(toMealPhoto(photo));
       byMeal.set(photo.mealId, list);
     }
+    // Real photos before generated ones (a stable sort keeps each group oldest first), so the
+    // first photo of the dish, the cover, is a real one whenever there is one.
+    for (const list of byMeal.values())
+      list.sort((a, b) => Number(a.generated) - Number(b.generated));
     return byMeal;
   }
 
@@ -419,6 +427,49 @@ export function createMealsService(
       });
       Sentry.metrics.count(`meals.photo_added.${kind}`, 1);
       if (isRecipe) startReading(mealId, saved.id, { contentType, data });
+      return toMealPhoto(saved);
+    },
+
+    /**
+     * Makes a picture of the dish from the meal's details (name, notes, tags, the recipe's
+     * ingredients) and adds it as a meal photo marked `generated`. One paid AI request: only
+     * when someone asks for it, never automatically. Real photos stay the cover.
+     */
+    async generatePhoto(userId: string, mealId: number): Promise<MealPhoto> {
+      const household = await households.context(userId);
+      const meal = await row(household.id, mealId);
+      if (!recipes.images) {
+        throw new HttpError(503, 'ai_unavailable', 'Generating images isn’t set up');
+      }
+      let image;
+      try {
+        image = await recipes.images.generate({
+          name: meal.name,
+          description: meal.description,
+          tags: meal.tags,
+          recipe: toRecipe(meal),
+        });
+      } catch (error) {
+        recipes.onError(error, { mealId });
+        Sentry.metrics.count('meals.image_generated.failed', 1);
+        throw new HttpError(502, 'ai_failed', 'Couldn’t generate an image. Try again.');
+      }
+      if (image.data.length === 0 || !looksLike(image.contentType, image.data)) {
+        recipes.onError(new Error('The generated image is not a valid image'), { mealId });
+        throw new HttpError(502, 'ai_failed', 'Couldn’t generate an image. Try again.');
+      }
+      // The meal may have been deleted while the image was made: then there's nothing to add to.
+      await row(household.id, mealId);
+      const saved = await photos.save({
+        householdId: household.id,
+        mealId,
+        kind: 'meal',
+        readStatus: null,
+        generated: true,
+        contentType: image.contentType,
+        data: image.data,
+      });
+      Sentry.metrics.count('meals.image_generated.done', 1);
       return toMealPhoto(saved);
     },
 

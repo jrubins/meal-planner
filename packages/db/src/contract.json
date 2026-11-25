@@ -674,6 +674,13 @@
                   "kind": "scalar"
                 }
               },
+              "generated": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "householdId": {
                 "nullable": false,
                 "type": {
@@ -738,6 +745,9 @@
                 },
                 "data": {
                   "column": "data"
+                },
+                "generated": {
+                  "column": "generated"
                 },
                 "householdId": {
                   "column": "householdId"
@@ -1369,6 +1379,15 @@
                   "dataType": "pg/bytea",
                   "nullable": false
                 },
+                "generated": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nullable": false
+                },
                 "householdId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
@@ -1550,7 +1569,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d04f3e3e05c4be33e4bcb6b48a4836be26c69d0f4ddfac5abe3525473e875ed4"
+    "storageHash": "2a84debc6917cb874ce4e912fda7f3c5d6002cd3334484c3a3b1100b6aad580a"
   },
   "execution": {
     "executionHash": "167c022c16f97340aaa8aafd1d91434c1f662492b5aabc3baac56449a88f756d",

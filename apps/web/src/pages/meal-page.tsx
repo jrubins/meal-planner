@@ -1,7 +1,16 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { cn } from 'cn';
-import { ArrowLeft, Camera, ExternalLink, Pencil, Trash2, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  Camera,
+  ExternalLink,
+  LoaderCircle,
+  Pencil,
+  Sparkles,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useRef, useState } from 'react';
 import type { PhotoKind } from '@app/shared';
 import { Button } from '@/components/ui/button';
@@ -21,6 +30,8 @@ import {
   useDeleteMeal,
   useDeletePhoto,
   useAdjustSteps,
+  useGeneratePhoto,
+  useGeneratingPhoto,
   useRereadPhoto,
   useUpdateMeal,
   useUploadPhoto,
@@ -40,6 +51,8 @@ export function MealPage({ mealId }: { mealId: number }) {
   const deletePhoto = useDeletePhoto(mealId);
   const rereadPhoto = useRereadPhoto(mealId);
   const adjustSteps = useAdjustSteps(mealId);
+  const generatePhoto = useGeneratePhoto();
+  const generation = useGeneratingPhoto(mealId);
   const navigate = useNavigate();
   const fileInput = useRef<HTMLInputElement>(null);
   const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null);
@@ -82,9 +95,18 @@ export function MealPage({ mealId }: { mealId: number }) {
               <div className="relative">
                 <img
                   src={apiUrl(selected.path)}
-                  alt={meal.name}
+                  alt={selected.generated ? `${meal.name} (AI-generated image)` : meal.name}
                   className="bg-muted aspect-[4/3] w-full object-cover sm:aspect-[16/9]"
                 />
+                {selected.generated ? (
+                  <span
+                    aria-hidden
+                    className="bg-background/85 absolute bottom-2 left-2 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium shadow-xs"
+                  >
+                    <Sparkles className="text-primary size-3" />
+                    AI image
+                  </span>
+                ) : null}
                 <Button
                   variant="secondary"
                   size="icon"
@@ -100,14 +122,35 @@ export function MealPage({ mealId }: { mealId: number }) {
                 </Button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => fileInput.current?.click()}
-                className="bg-secondary text-muted-foreground hover:text-foreground flex aspect-[16/9] w-full flex-col items-center justify-center gap-2"
-              >
-                <Camera className="size-8" strokeWidth={1.5} aria-hidden />
-                <span className="text-sm">Add a photo of the dish</span>
-              </button>
+              <div className="bg-secondary text-muted-foreground flex aspect-[16/9] w-full flex-col items-center justify-center gap-3 p-4 text-center">
+                {generation.pending ? (
+                  <>
+                    <LoaderCircle className="size-8 animate-spin" strokeWidth={1.5} aria-hidden />
+                    <p role="status" className="text-sm">
+                      Generating an image… this takes about 20 seconds.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="size-8" strokeWidth={1.5} aria-hidden />
+                    <p className="text-sm">No photo of the dish yet</p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInput.current?.click()}
+                      >
+                        <Camera />
+                        Upload a photo
+                      </Button>
+                      <Button size="sm" onClick={() => generatePhoto.mutate(meal.id)}>
+                        <Sparkles />
+                        Generate one
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
             {dishPhotos.length > 0 ? (
               <div className="flex gap-2 overflow-x-auto p-2">
@@ -134,6 +177,22 @@ export function MealPage({ mealId }: { mealId: number }) {
                 >
                   <Camera className="size-5" aria-hidden />
                 </button>
+                <button
+                  type="button"
+                  onClick={() => generatePhoto.mutate(meal.id)}
+                  disabled={generation.pending}
+                  className="bg-secondary text-muted-foreground hover:text-foreground flex size-14 shrink-0 items-center justify-center rounded-lg disabled:opacity-70"
+                  aria-label={
+                    generation.pending ? 'Generating an image' : 'Generate an image with AI'
+                  }
+                  title="Generate an image with AI"
+                >
+                  {generation.pending ? (
+                    <LoaderCircle className="size-5 animate-spin" aria-hidden />
+                  ) : (
+                    <Sparkles className="size-5" aria-hidden />
+                  )}
+                </button>
               </div>
             ) : null}
             <input
@@ -152,6 +211,18 @@ export function MealPage({ mealId }: { mealId: number }) {
           {uploadPhoto.isPending ? (
             <p role="status" className="text-muted-foreground text-sm">
               Uploading…
+            </p>
+          ) : null}
+          {generation.pending && dishPhotos.length > 0 ? (
+            <p role="status" className="text-muted-foreground text-sm">
+              Generating an image… this takes about 20 seconds.
+            </p>
+          ) : null}
+          {generation.error ? (
+            <p role="alert" className="text-destructive text-sm">
+              {generation.error instanceof ApiRequestError
+                ? generation.error.message
+                : 'Couldn’t generate an image. Try again.'}
             </p>
           ) : null}
           {uploadError ? (

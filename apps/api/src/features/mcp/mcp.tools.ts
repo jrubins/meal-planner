@@ -3,6 +3,7 @@ import {
   CreateMealSchema,
   HouseholdSchema,
   ListMealsQuerySchema,
+  MealPhotoSchema,
   MealSchema,
   NightSchema,
   ShuffleWeekResultSchema,
@@ -34,7 +35,7 @@ const INSTRUCTIONS = `Dinner planner for a household (usually a couple) who plan
 - Meals can be referred to by mealId or by exact name (mealName, case-insensitive). A meal must exist before it is planned: if a name is not found, offer to create it with create_meal.
 - For inspiration, suggest_meals favours meals not eaten recently and skips ones already in the week; shuffle_week adds suggested options to every empty night for the household to vote on.
 - A meal can carry its recipe, structured: title, servings, prep and cook times, ingredients (section, amount as written, item, note, excluded), steps and notes. Ingredients marked excluded are ones this household always leaves out: leave them off shopping lists. When adjustedSteps is set and its leftOut matches the excluded ingredients, those are the steps they cook from; adjust_recipe_steps rewrites them after exclusions change. It is read automatically from recipe photos uploaded in the web app, or set with create_meal / update_meal. Use get_meal to answer questions about ingredients or steps, and to build shopping lists for the week. Keep amounts as written ("2 tbsp", "a pinch").
-- Photos (of the dish or of its recipe) are added in the web app, not here.`;
+- Photos (of the dish or of its recipe) are uploaded in the web app, not here. A meal with no photo of the dish can get an AI-generated picture with generate_meal_photo, but only when the user asks for one: each picture is a paid request.`;
 
 const mealRef = {
   mealId: z.number().int().positive().optional().describe('The meal’s ID'),
@@ -328,6 +329,18 @@ export function createMcpServer(services: McpServices, userId: string): McpServe
       outputSchema: MealSchema,
     },
     async ({ mealId }) => json(await meals.adjustSteps(userId, mealId)),
+  );
+
+  server.registerTool(
+    'generate_meal_photo',
+    {
+      title: 'Generate meal photo',
+      description:
+        "Make a picture of a meal's dish with an AI image model, from its name, notes, tags and recipe, and add it to the meal's photos (marked generated; real photos stay the cover). Each call is a paid request and adds another picture: only call it when the user asks, once per request, and fill in the meal's details first for a closer match.",
+      inputSchema: z.object({ mealId: z.number().int().positive() }),
+      outputSchema: MealPhotoSchema,
+    },
+    async ({ mealId }) => json(await meals.generatePhoto(userId, mealId)),
   );
 
   server.registerTool(

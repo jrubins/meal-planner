@@ -41,6 +41,64 @@ test.describe('meals', () => {
     await expect(page.getByText(name)).toHaveCount(0);
   });
 
+  test('adds photos of the dish and the recipe while creating a meal', async ({
+    page,
+    capture,
+  }) => {
+    const name = unique('Lasagne');
+    await page.goto('/meals');
+    await page.getByRole('button', { name: 'New meal' }).click();
+    const dialog = page.getByRole('dialog', { name: 'New meal' });
+    await dialog.getByLabel('Name').fill(name);
+
+    // Without a photo of the dish, a picture can be generated instead...
+    const generate = dialog.getByRole('checkbox', { name: /Generate one with AI/ });
+    await expect(generate).toBeVisible();
+    await dialog.getByLabel('Choose photos of the dish').setInputFiles({
+      name: 'dinner.png',
+      mimeType: 'image/png',
+      buffer: PNG,
+    });
+    // ...but not once there is one.
+    await expect(generate).toBeHidden();
+    await dialog.getByLabel('Choose photos of the recipe').setInputFiles({
+      name: 'page-1.png',
+      mimeType: 'image/png',
+      buffer: PNG,
+    });
+    await expect(dialog.getByRole('list', { name: 'Photos of the recipe' })).toBeVisible();
+    await capture('new-meal-photos');
+    await dialog.getByRole('button', { name: 'Add meal' }).click();
+
+    await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
+    await expect(page.getByRole('img', { name, exact: true })).toBeVisible();
+    const recipePhotos = page.getByRole('list', { name: 'Recipe photos' });
+    await expect(recipePhotos.getByRole('listitem')).toHaveCount(1);
+    // The test API has no AI key, so the recipe photo is kept but not read.
+    await expect(recipePhotos.getByText('Recipe reading isn’t set up')).toBeVisible();
+  });
+
+  test.describe('without an image model', () => {
+    // The test API has no image key, so the request fails with a 503, which the browser logs.
+    test.use({ expectedConsoleErrors: [/status of 503/] });
+
+    test('asks for a generated picture of a new meal', async ({ page, capture }) => {
+      const name = unique('Fish pie');
+      await page.goto('/meals');
+      await page.getByRole('button', { name: 'New meal' }).click();
+      const dialog = page.getByRole('dialog', { name: 'New meal' });
+      await dialog.getByLabel('Name').fill(name);
+      await dialog.getByRole('checkbox', { name: /Generate one with AI/ }).check();
+      await dialog.getByRole('button', { name: 'Add meal' }).click();
+
+      await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
+      // The test API has no image key: the request is made, and says so (nothing is paid for).
+      await expect(page.getByRole('alert')).toHaveText('Generating images isn’t set up');
+      await expect(page.getByRole('button', { name: 'Generate one' })).toBeVisible();
+      await capture('meal-generate');
+    });
+  });
+
   test('adds a recipe photo and types the recipe in', async ({ page, api, capture }) => {
     const meal = await createMeal(api, unique('Tikka masala'));
     await page.goto(`/meals/${meal.id}`);
@@ -55,7 +113,7 @@ test.describe('meals', () => {
     // The test API has no Anthropic key, so the photo is kept but not read.
     await expect(recipe.getByText('Recipe reading isn’t set up')).toBeVisible();
     // A recipe photo never becomes the dish's cover photo.
-    await expect(page.getByRole('button', { name: 'Add a photo of the dish' })).toBeVisible();
+    await expect(page.getByText('No photo of the dish yet')).toBeVisible();
 
     await recipe.getByRole('button', { name: 'Type it in' }).click();
     const editor = page.getByRole('dialog', { name: 'Add recipe' });

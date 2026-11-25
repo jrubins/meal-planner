@@ -8,6 +8,7 @@ const photo = (id: number, readStatus: RecipeReadStatus): MealPhoto => ({
   id,
   kind: 'recipe',
   readStatus,
+  generated: false,
   // No API in Storybook: apiUrl() makes this /api/../favicon.svg, i.e. the app's favicon.
   path: '/../favicon.svg',
   createdAt: '2026-11-24T12:00:00.000Z',

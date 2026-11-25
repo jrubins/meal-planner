@@ -21,6 +21,22 @@ export const NewMeal: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Save' }));
     await expect(args.onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Pad thai', tags: ['thai', 'quick'] }),
+      expect.anything(),
+    );
+  },
+};
+
+/** A new meal can also choose photos, or ask for a generated picture. */
+export const NewMealWithPhotos: Story = {
+  args: { withPhotos: true, submitLabel: 'Add meal' },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(canvas.getByLabelText('Name'), 'Fish pie');
+    await userEvent.click(canvas.getByRole('checkbox', { name: /Generate one with AI/ }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Add meal' }));
+    await expect(args.onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Fish pie' }),
+      { meal: [], recipe: [], generate: true },
     );
   },
 };

@@ -6,7 +6,7 @@ import {
   type CreateMeal,
   type UpdateMeal,
 } from '@app/shared';
-import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useMutationState, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/api';
 
 export const mealsQueryOptions = queryOptions({
@@ -74,17 +74,51 @@ export function useDeleteMeal() {
   });
 }
 
+/** Uploads a photo of the dish or of its recipe (already resized: see resizeImage). */
+export const uploadPhoto = (mealId: number, photo: Blob, kind: PhotoKind) =>
+  apiRequest(`/meals/${mealId}/photos?kind=${kind}`, MealPhotoSchema, {
+    method: 'POST',
+    headers: { 'content-type': photo.type },
+    body: photo,
+  });
+
 export function useUploadPhoto(mealId: number) {
   const invalidate = useInvalidateMeals();
   return useMutation({
     mutationFn: ({ photo, kind }: { photo: Blob; kind: PhotoKind }) =>
-      apiRequest(`/meals/${mealId}/photos?kind=${kind}`, MealPhotoSchema, {
-        method: 'POST',
-        headers: { 'content-type': photo.type },
-        body: photo,
-      }),
+      uploadPhoto(mealId, photo, kind),
     onSuccess: invalidate,
   });
+}
+
+const GENERATE_PHOTO = ['meals', 'generate-photo'];
+
+/**
+ * Makes a picture of a meal with AI (one paid request; takes up to half a minute). Keyed by
+ * meal, so a page can show it's under way even when another component started it, e.g. the
+ * new-meal dialog that then navigates to the meal.
+ */
+export function useGeneratePhoto() {
+  const invalidate = useInvalidateMeals();
+  return useMutation({
+    mutationKey: GENERATE_PHOTO,
+    mutationFn: (mealId: number) =>
+      apiRequest(`/meals/${mealId}/photos/generate`, MealPhotoSchema, { method: 'POST' }),
+    onSuccess: invalidate,
+  });
+}
+
+/** The latest picture generation for a meal: whether it's running, and its error if it failed. */
+export function useGeneratingPhoto(mealId: number): { pending: boolean; error: Error | null } {
+  const runs = useMutationState({
+    filters: { mutationKey: GENERATE_PHOTO, predicate: (m) => m.state.variables === mealId },
+    select: (mutation) => ({ status: mutation.state.status, error: mutation.state.error }),
+  });
+  const latest = runs.at(-1);
+  return {
+    pending: latest?.status === 'pending',
+    error: latest?.status === 'error' ? latest.error : null,
+  };
 }
 
 /** Rewrites the recipe's steps to leave out its excluded ingredients. */

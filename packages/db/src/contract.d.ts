@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'d04f3e3e05c4be33e4bcb6b48a4836be26c69d0f4ddfac5abe3525473e875ed4'>;
+  StorageHashBase<'2a84debc6917cb874ce4e912fda7f3c5d6002cd3334484c3a3b1100b6aad580a'>;
 export type ExecutionHash =
   ExecutionHashBase<'167c022c16f97340aaa8aafd1d91434c1f662492b5aabc3baac56449a88f756d'>;
 export type ProfileHash =
@@ -375,6 +375,7 @@ export namespace Models {
     contentType: FieldOutputTypes['public']['MealPhoto']['contentType'];
     createdAt: FieldOutputTypes['public']['MealPhoto']['createdAt'];
     data: FieldOutputTypes['public']['MealPhoto']['data'];
+    generated: FieldOutputTypes['public']['MealPhoto']['generated'];
     householdId: FieldOutputTypes['public']['MealPhoto']['householdId'];
     id: FieldOutputTypes['public']['MealPhoto']['id'];
     kind: FieldOutputTypes['public']['MealPhoto']['kind'];
@@ -834,6 +835,16 @@ type ContractBase = Omit<
                   readonly dataType: 'pg/bytea';
                   readonly codecId: 'pg/bytea@1';
                   readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly generated: {
+                  readonly dataType: 'pg/bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
                   readonly many: false;
                 };
                 readonly householdId: {
@@ -1410,6 +1421,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bytea@1' };
               };
+              readonly generated: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
               readonly householdId: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
@@ -1449,6 +1464,7 @@ type ContractBase = Omit<
                 readonly contentType: { readonly column: 'contentType' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly data: { readonly column: 'data' };
+                readonly generated: { readonly column: 'generated' };
                 readonly householdId: { readonly column: 'householdId' };
                 readonly id: { readonly column: 'id' };
                 readonly kind: { readonly column: 'kind' };

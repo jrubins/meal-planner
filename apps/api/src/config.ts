@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  IMAGE_PROVIDERS,
+  IMAGE_QUALITIES,
+  resolveImageModel,
+} from './features/meals/image-generator.ts';
 import { AI_PROVIDERS, resolveModel } from './features/meals/recipe-reader.ts';
 
 const emptyToUndefined = (value: unknown) => (value === '' ? undefined : value);
@@ -63,6 +68,16 @@ const EnvSchema = z
     /** The provider's API key. Optional: without it, recipe photos are kept but not read. */
     AI_API_KEY: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
 
+    // --- AI images (pictures of meals without a photo, through TanStack AI) ---------------
+    /** Which provider makes meal pictures: openai (default) or gemini. */
+    IMAGE_PROVIDER: z.preprocess(emptyToUndefined, z.enum(IMAGE_PROVIDERS).default('openai')),
+    /** The provider's image model. Defaults: gpt-image-2.5-flare, gemini-3.1-flash-lite-image. */
+    IMAGE_MODEL: z.preprocess(emptyToUndefined, z.string().optional()),
+    /** OpenAI image quality (cost rises with it): low (default), medium or high. */
+    IMAGE_QUALITY: z.preprocess(emptyToUndefined, z.enum(IMAGE_QUALITIES).default('low')),
+    /** The image provider's API key. Optional: without it, meals can't get generated pictures. */
+    IMAGE_API_KEY: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+
     // --- Monitoring ------------------------------------------------------------------------
     SENTRY_DSN: z.preprocess(emptyToUndefined, z.url().optional()),
     SENTRY_ENVIRONMENT: z.preprocess(emptyToUndefined, z.string().optional()),
@@ -79,6 +94,13 @@ const EnvSchema = z
         resolveModel(env.AI_PROVIDER, env.AI_MODEL);
       } catch (error) {
         ctx.addIssue({ code: 'custom', path: ['AI_MODEL'], message: (error as Error).message });
+      }
+    }
+    if (env.IMAGE_API_KEY) {
+      try {
+        resolveImageModel(env.IMAGE_PROVIDER, env.IMAGE_MODEL);
+      } catch (error) {
+        ctx.addIssue({ code: 'custom', path: ['IMAGE_MODEL'], message: (error as Error).message });
       }
     }
     const deployed = env.NODE_ENV === 'production' || env.VERCEL !== undefined;

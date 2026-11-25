@@ -1,10 +1,12 @@
 import { CreateMealSchema, type CreateMeal, type Meal } from '@app/shared';
 import { useForm } from '@tanstack/react-form';
+import { useState } from 'react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { NewMealPhotosField, type NewMealPhotos } from './new-meal-photos';
 
 /**
  * The form edits plain strings (tags as one comma-separated line); the shared schema checks
@@ -23,6 +25,8 @@ const MealFormSchema = z.object({
   tags: z.string().max(400),
 });
 
+const NO_PHOTOS: NewMealPhotos = { meal: [], recipe: [], generate: false };
+
 const toTags = (text: string) =>
   text
     .split(',')
@@ -33,12 +37,21 @@ interface MealFormProps {
   /** The meal being edited; a new meal without one. */
   meal?: Meal;
   submitLabel?: string;
-  onSubmit: (values: CreateMeal) => Promise<unknown>;
+  /** New meals only: also choose photos of the dish and the recipe, passed to onSubmit. */
+  withPhotos?: boolean;
+  onSubmit: (values: CreateMeal, photos: NewMealPhotos) => Promise<unknown>;
   onCancel?: () => void;
 }
 
 /** Create or edit a meal. Validates with the same Zod schema the API uses. */
-export function MealForm({ meal, submitLabel = 'Save', onSubmit, onCancel }: MealFormProps) {
+export function MealForm({
+  meal,
+  submitLabel = 'Save',
+  withPhotos = false,
+  onSubmit,
+  onCancel,
+}: MealFormProps) {
+  const [photos, setPhotos] = useState(NO_PHOTOS);
   const form = useForm({
     defaultValues: {
       name: meal?.name ?? '',
@@ -48,7 +61,7 @@ export function MealForm({ meal, submitLabel = 'Save', onSubmit, onCancel }: Mea
     },
     validators: { onSubmit: MealFormSchema },
     onSubmit: async ({ value }) => {
-      await onSubmit(CreateMealSchema.parse({ ...value, tags: toTags(value.tags) }));
+      await onSubmit(CreateMealSchema.parse({ ...value, tags: toTags(value.tags) }), photos);
     },
   });
 
@@ -111,6 +124,7 @@ export function MealForm({ meal, submitLabel = 'Save', onSubmit, onCancel }: Mea
           </div>
         )}
       </form.Field>
+      {withPhotos ? <NewMealPhotosField value={photos} onChange={setPhotos} /> : null}
       <div className="flex justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel}>

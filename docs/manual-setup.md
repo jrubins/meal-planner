@@ -50,6 +50,12 @@ Links below are filled in for `jrubins/meal-planner` (project name `meal-planner
       default) and save it as the `AI_API_KEY` repository secret (section 2). Without it,
       recipe photos are kept but not read into text. To switch provider, see the comment in
       `infra/terraform.tfvars`; to turn reading off, set `ai_api_key_version = 0`.
+- [ ] **Generated meal pictures**: create an [OpenAI API key](https://platform.openai.com/api-keys)
+      and save it as the `IMAGE_API_KEY` repository secret (section 2), **before merging** the
+      change that sets `image_api_key_version` (Terraform refuses to apply without it). Set a
+      monthly budget in [OpenAI → Limits](https://platform.openai.com/settings/organization/limits)
+      as a hard cap. Pictures are only made when someone taps "Generate" (about 0.6¢ each at
+      low quality). To turn them off, set `image_api_key_version = 0`.
 - [ ] **Claude connector**: in [claude.ai Settings → Connectors](https://claude.ai/settings/connectors),
       add a custom connector with the MCP URL (section 4). Sign in once. Each partner does this
       in their own Claude account.
@@ -75,6 +81,7 @@ Terraform generates it and writes it straight to Vercel (bump `cookie_password_v
 | `SENTRY_AUTH_TOKEN`       | Sentry personal token for Terraform                                        | [Sentry → User settings → Personal Tokens](https://sentry.io/settings/account/api/auth-tokens/) | `org:read`, `project:admin`, `team:admin`                                                                  |         | 2026-11-24 |
 | `INFRA_GITHUB_TOKEN`      | Fine-grained personal access token                                         | [GitHub → Fine-grained tokens → New](https://github.com/settings/personal-access-tokens/new)    | Only `jrubins/meal-planner`; Administration: RW                                                            |         | 2026-11-24 |
 | `AI_API_KEY`              | API key of the AI provider that reads recipe photos (Anthropic by default) | [Claude Console → API keys](https://platform.claude.com/settings/keys)                          | A key in the workspace you want billed; set a spend limit there if you like                                |         |            |
+| `IMAGE_API_KEY`           | API key of the AI provider that makes meal pictures (OpenAI by default)    | [OpenAI → API keys](https://platform.openai.com/api-keys)                                       | A project key with access to image models; set a monthly budget under Limits                               |         |            |
 | `WORKOS_API_KEY`          | WorkOS API key: the API signs browsers in with it (server-side sessions)   | [WorkOS → API Keys](https://dashboard.workos.com/api-keys)                                      | The same WorkOS environment as your client ID (Staging or Production)                                      |         | 2026-11-24 |
 | `SENTRY_SOURCEMAPS_TOKEN` | Optional: Sentry organization token (uploads)                              | [Sentry → Settings → Auth Tokens](https://sentry.io/settings/auth-tokens/)                      | Created with the default organization token scopes                                                         |         |            |
 
