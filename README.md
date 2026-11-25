@@ -17,7 +17,7 @@ options you're deciding between, and your meal library with photos.
   storage later without changing the API.
 - **Recipes:** each meal can have photos of the dish and photos of its recipe (a cookbook page,
   a card, a screenshot). An AI model (Claude by default) reads each recipe photo in the background and adds the recipe
-  to the meal as text, which you can edit and Claude can read back in chat. Reading goes through
+  to the meal as a structured recipe (title, servings, times, ingredients by section, steps, notes), which you can edit and Claude can read back in chat. Reading goes through
   [TanStack AI](https://tanstack.com/ai), so the provider is a setting: `AI_PROVIDER`
   (`anthropic`, `openai` or `gemini`), `AI_MODEL` and `AI_API_KEY`
   (`apps/api/src/features/meals/recipe-reader.ts`). Without a key, recipe photos are kept unread.

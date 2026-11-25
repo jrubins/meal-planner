@@ -56,14 +56,21 @@ test.describe('meals', () => {
     // A recipe photo never becomes the dish's cover photo.
     await expect(page.getByRole('button', { name: 'Add a photo of the dish' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
-    await page
-      .getByRole('dialog')
-      .getByLabel('Recipe', { exact: true })
-      .fill('Ingredients:\n- chicken\nSteps:\n1. Marinate overnight.');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await recipe.getByRole('button', { name: 'Type it in' }).click();
+    const editor = page.getByRole('dialog', { name: 'Add recipe' });
+    await editor.getByLabel('Servings').fill('4');
+    await editor.getByRole('button', { name: 'Add ingredient' }).click();
+    await editor.getByLabel('Ingredient 1 amount').fill('600 g');
+    await editor.getByLabel('Ingredient 1', { exact: true }).fill('chicken thighs');
+    await editor.getByLabel('Ingredient 1 section').fill('Marinade');
+    await editor.getByRole('button', { name: 'Add step' }).click();
+    await editor.getByRole('textbox', { name: 'Step 1', exact: true }).fill('Marinate overnight.');
+    await editor.getByRole('button', { name: 'Save recipe' }).click();
 
-    await expect(recipe.getByText('1. Marinate overnight.')).toBeVisible();
+    await expect(editor).toBeHidden();
+    await expect(recipe.getByRole('heading', { name: 'Marinade' })).toBeVisible();
+    await expect(recipe.getByText('chicken thighs')).toBeVisible();
+    await expect(recipe.getByText('Marinate overnight.')).toBeVisible();
     await capture('meal-recipe');
   });
 

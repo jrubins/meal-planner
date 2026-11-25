@@ -5,3 +5,4 @@ export * from './health.ts';
 export * from './household.ts';
 export * from './meals.ts';
 export * from './plan.ts';
+export * from './recipes.ts';

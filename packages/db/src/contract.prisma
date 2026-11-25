@@ -41,7 +41,12 @@ model Meal {
   name            String
   description     String?
   recipeUrl       String?
-  // The recipe as text: read from recipe photos by Claude, or typed in. Editable.
+  // The recipe, structured (title, servings, ingredients, steps, notes): read from recipe
+  // photos or typed in. Validated by RecipeSchema in @app/shared, so its shape can grow
+  // without a migration.
+  recipe          Json?
+  // Before structured recipes: plain text. Read as the recipe's notes until the meal is
+  // next saved, which moves it into recipe. Drop once no row has it.
   recipeText      String?
   tags            String[]
   createdByUserId String

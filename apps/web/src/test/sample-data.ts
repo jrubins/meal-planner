@@ -1,4 +1,4 @@
-import type { HouseholdMember, Meal, Night } from '@app/shared';
+import type { HouseholdMember, Meal, Night, Recipe } from '@app/shared';
 
 // Sample data for stories and component tests.
 
@@ -17,7 +17,7 @@ export function sampleMeal(id: number, name: string, overrides: Partial<Meal> = 
     coverPhotoPath: null,
     description: null,
     recipeUrl: null,
-    recipeText: null,
+    recipe: null,
     photos: [],
     lastEatenOn: null,
     timesEaten: 0,
@@ -81,3 +81,26 @@ export const VOTING_NIGHT: Night = {
 };
 
 export const EMPTY_NIGHT: Night = { date: '2026-11-28', dinner: null, options: [] };
+
+export const SAMPLE_RECIPE: Recipe = {
+  title: 'Chicken tikka masala',
+  servings: '4',
+  prepTime: '20 min + overnight',
+  cookTime: '40 min',
+  ingredients: [
+    { section: 'Marinade', amount: '600 g', item: 'chicken thighs', note: 'cut into chunks' },
+    { section: 'Marinade', amount: '200 g', item: 'plain yogurt', note: null },
+    { section: 'Marinade', amount: '1 tbsp', item: 'garam masala', note: null },
+    { section: 'Sauce', amount: '2 tbsp', item: 'butter', note: 'or ghee' },
+    { section: 'Sauce', amount: '1', item: 'onion', note: 'finely chopped' },
+    { section: 'Sauce', amount: '400 g', item: 'crushed tomatoes', note: null },
+    { section: 'Sauce', amount: '150 ml', item: 'double cream', note: null },
+  ],
+  steps: [
+    'Mix the marinade ingredients with the chicken and leave overnight in the fridge.',
+    'Grill the chicken until charred at the edges, about 10 minutes.',
+    'Soften the onion in the butter, add the tomatoes and simmer for 15 minutes.',
+    'Stir in the cream and the chicken and simmer for 5 more minutes.',
+  ],
+  notes: 'Serve with basmati rice and naan. Freezes well.',
+};

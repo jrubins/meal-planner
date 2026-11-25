@@ -1,14 +1,21 @@
 import { randomUUID } from 'node:crypto';
-import { MealPhotoSchema, MealSchema, type Meal, type MealPhoto } from '@app/shared';
+import {
+  MealPhotoSchema,
+  MealSchema,
+  RecipeInputSchema,
+  type Meal,
+  type MealPhoto,
+  type RecipeInput,
+} from '@app/shared';
 import request from 'supertest';
 import { afterAll, describe, expect, it } from 'vitest';
 import type { RecipeReader } from '../src/features/meals/recipe-reader.ts';
 import { bearer, createTestApp, unique, uniqueUserId } from './helpers.ts';
 
 /**
- * A fake recipe reader that never calls Claude. Each test image is a JPEG header followed by
- * an instruction: "RECIPE <text>", "NOT_A_RECIPE", or "FAIL_ONCE <id> <text>" (fails the first
- * read of that photo, then reads <text>). It waits a little, like a real reading.
+ * A fake recipe reader that never calls a model. Each test image is a JPEG header followed by
+ * an instruction: "RECIPE <json>", "NOT_A_RECIPE", or "FAIL_ONCE <id> <json>" (fails the first
+ * read of that photo, then reads <json>). It waits a little, like a real reading.
  */
 const failedOnce = new Set<string>();
 const fakeReader: RecipeReader = {
@@ -22,15 +29,17 @@ const fakeReader: RecipeReader = {
         failedOnce.add(failOnce[1]);
         throw new Error('simulated API failure');
       }
-      return { isRecipe: true, text: failOnce[2] };
+      return { isRecipe: true, recipe: RecipeInputSchema.parse(JSON.parse(failOnce[2])) };
     }
-    return { isRecipe: true, text: instruction.replace(/^RECIPE /, '') };
+    const json = instruction.replace(/^RECIPE /, '');
+    return { isRecipe: true, recipe: RecipeInputSchema.parse(JSON.parse(json)) };
   },
 };
 
 const JPEG_HEADER = [0xff, 0xd8, 0xff, 0xe0];
 const image = (instruction: string) =>
   Buffer.concat([Buffer.from(JPEG_HEADER), Buffer.from(instruction, 'utf8')]);
+const recipeImage = (recipe: RecipeInput) => image(`RECIPE ${JSON.stringify(recipe)}`);
 
 const { app, db } = createTestApp({}, { recipeReader: fakeReader });
 const unread = createTestApp();
@@ -85,7 +94,7 @@ describe('recipe photos', () => {
     const { auth } = await asNewUser();
     const meal = await createMeal(auth);
 
-    const recipePhoto = await upload(auth, meal.id, 'recipe', image('RECIPE Stir.'));
+    const recipePhoto = await upload(auth, meal.id, 'recipe', recipeImage({ steps: ['Stir.'] }));
     expect(recipePhoto).toMatchObject({ kind: 'recipe', readStatus: 'reading' });
     expect((await afterReading(auth, meal.id)).coverPhotoPath).toBeNull();
 
@@ -96,29 +105,68 @@ describe('recipe photos', () => {
     expect(after.photos.map((photo) => photo.kind)).toEqual(['recipe', 'meal']);
   });
 
-  it('reads a recipe photo into the meal’s recipe text', async () => {
+  it('reads a recipe photo into the meal’s structured recipe', async () => {
     const { auth } = await asNewUser();
     const meal = await createMeal(auth);
-    const text = `Pancakes ${randomUUID()}\nIngredients:\n- 2 eggs\nSteps:\n1. Whisk.`;
+    const title = unique('Pancakes');
 
-    await upload(auth, meal.id, 'recipe', image(`RECIPE ${text}`));
+    await upload(
+      auth,
+      meal.id,
+      'recipe',
+      recipeImage({
+        title,
+        servings: '4',
+        ingredients: [
+          { amount: '2', item: 'eggs' },
+          { item: 'salt', note: 'a pinch' },
+        ],
+        steps: ['Whisk.', 'Fry.'],
+      }),
+    );
 
     const read = await afterReading(auth, meal.id);
-    expect(read.recipeText).toBe(text);
+    expect(read.recipe).toEqual({
+      title,
+      servings: '4',
+      prepTime: null,
+      cookTime: null,
+      ingredients: [
+        { section: null, amount: '2', item: 'eggs', note: null },
+        { section: null, amount: null, item: 'salt', note: 'a pinch' },
+      ],
+      steps: ['Whisk.', 'Fry.'],
+      notes: null,
+    });
     expect(read.photos[0]?.readStatus).toBe('done');
   });
 
-  it('adds each recipe photo’s text after what’s already there, even when read at once', async () => {
+  it('adds each page after what’s already there, even when read at once', async () => {
     const { auth } = await asNewUser();
-    const meal = await createMeal(auth, { name: unique('Lasagne'), recipeText: 'Typed notes' });
+    const meal = await createMeal(auth, {
+      name: unique('Lasagne'),
+      recipe: { title: 'Lasagne', steps: ['Typed step.'] },
+    });
     const pages = ['Page one', 'Page two', 'Page three'].map((page) => unique(page));
 
     // Uploaded back to back, so the readings overlap and finish in any order.
-    for (const page of pages) await upload(auth, meal.id, 'recipe', image(`RECIPE ${page}`));
+    for (const page of pages) {
+      await upload(
+        auth,
+        meal.id,
+        'recipe',
+        recipeImage({ title: page, ingredients: [{ item: `${page} item` }], steps: [page] }),
+      );
+    }
 
-    const { recipeText } = await afterReading(auth, meal.id);
-    expect(recipeText?.startsWith('Typed notes\n\n')).toBe(true);
-    for (const page of pages) expect(recipeText).toContain(page);
+    const { recipe } = await afterReading(auth, meal.id);
+    // The typed title and step stay first; every page's ingredient and step is kept.
+    expect(recipe?.title).toBe('Lasagne');
+    expect(recipe?.steps[0]).toBe('Typed step.');
+    expect([...(recipe?.steps ?? [])].sort()).toEqual(['Typed step.', ...pages].sort());
+    expect(recipe?.ingredients.map((i) => i.item).sort()).toEqual(
+      pages.map((page) => `${page} item`).sort(),
+    );
   });
 
   it('leaves the recipe alone when the photo isn’t a recipe', async () => {
@@ -128,16 +176,21 @@ describe('recipe photos', () => {
     await upload(auth, meal.id, 'recipe', image('NOT_A_RECIPE'));
 
     const read = await afterReading(auth, meal.id);
-    expect(read.recipeText).toBeNull();
+    expect(read.recipe).toBeNull();
     expect(read.photos[0]?.readStatus).toBe('not_a_recipe');
   });
 
   it('marks a failed reading, and reads it again on request', async () => {
     const { auth } = await asNewUser();
     const meal = await createMeal(auth);
-    const text = unique('Soup');
+    const step = unique('Simmer');
 
-    const photo = await upload(auth, meal.id, 'recipe', image(`FAIL_ONCE ${randomUUID()} ${text}`));
+    const photo = await upload(
+      auth,
+      meal.id,
+      'recipe',
+      image(`FAIL_ONCE ${randomUUID()} ${JSON.stringify({ steps: [step] })}`),
+    );
     expect((await afterReading(auth, meal.id)).photos[0]?.readStatus).toBe('failed');
 
     const reread = await request(app)
@@ -146,7 +199,7 @@ describe('recipe photos', () => {
       .expect(200);
     expect(MealPhotoSchema.parse(reread.body).readStatus).toBe('reading');
     const read = await afterReading(auth, meal.id);
-    expect(read.recipeText).toBe(text);
+    expect(read.recipe?.steps).toEqual([step]);
     expect(read.photos[0]?.readStatus).toBe('done');
   });
 
@@ -166,30 +219,9 @@ describe('recipe photos', () => {
       .expect(201);
     const meal = MealSchema.parse(res.body);
 
-    const photo = await upload(auth, meal.id, 'recipe', image('RECIPE Never read'), unread.app);
+    const photo = await upload(auth, meal.id, 'recipe', recipeImage({ steps: ['x'] }), unread.app);
 
     expect(photo.readStatus).toBe('unavailable');
-  });
-
-  it('accepts recipe text typed in, and finds meals by it', async () => {
-    const { auth } = await asNewUser();
-    const word = unique('saffron').replaceAll(' ', '');
-    const meal = await createMeal(auth, { name: unique('Paella'), recipeText: `Add ${word}.` });
-    expect(meal.recipeText).toBe(`Add ${word}.`);
-
-    const found = await request(app).get(`/meals?q=${word}`).set('Authorization', auth).expect(200);
-    expect(
-      MealSchema.array()
-        .parse(found.body)
-        .map((m) => m.id),
-    ).toEqual([meal.id]);
-
-    const cleared = await request(app)
-      .patch(`/meals/${meal.id}`)
-      .set('Authorization', auth)
-      .send({ recipeText: '' })
-      .expect(200);
-    expect(MealSchema.parse(cleared.body).recipeText).toBeNull();
   });
 
   it('rejects an unknown photo kind', async () => {
@@ -201,5 +233,86 @@ describe('recipe photos', () => {
       .set('Content-Type', 'image/jpeg')
       .send(image('x'))
       .expect(400);
+  });
+});
+
+describe('structured recipes', () => {
+  it('accepts a recipe typed in, filling in what’s left out, and finds meals by it', async () => {
+    const { auth } = await asNewUser();
+    const spice = unique('saffron').replaceAll(' ', '');
+    const meal = await createMeal(auth, {
+      name: unique('Paella'),
+      recipe: {
+        ingredients: [{ section: ' For the rice ', amount: ' 1 pinch ', item: spice }],
+        steps: ['Toast the rice.'],
+      },
+    });
+    expect(meal.recipe).toEqual({
+      title: null,
+      servings: null,
+      prepTime: null,
+      cookTime: null,
+      ingredients: [{ section: 'For the rice', amount: '1 pinch', item: spice, note: null }],
+      steps: ['Toast the rice.'],
+      notes: null,
+    });
+
+    const found = await request(app)
+      .get(`/meals?q=${spice}`)
+      .set('Authorization', auth)
+      .expect(200);
+    expect(
+      MealSchema.array()
+        .parse(found.body)
+        .map((m) => m.id),
+    ).toEqual([meal.id]);
+  });
+
+  it('replaces the whole recipe on update, and removes it with null or an empty one', async () => {
+    const { auth } = await asNewUser();
+    const meal = await createMeal(auth, { name: unique('Soup'), recipe: { steps: ['Old.'] } });
+    const update = (recipe: unknown) =>
+      request(app)
+        .patch(`/meals/${meal.id}`)
+        .set('Authorization', auth)
+        .send({ recipe })
+        .expect(200)
+        .then((res) => MealSchema.parse(res.body).recipe);
+
+    expect((await update({ steps: ['New.'] }))?.steps).toEqual(['New.']);
+    expect(await update({ steps: [], ingredients: [] })).toBeNull();
+    await update({ steps: ['Again.'] });
+    expect(await update(null)).toBeNull();
+  });
+
+  it('rejects an ingredient without an item', async () => {
+    const { auth } = await asNewUser();
+    await request(app)
+      .post('/meals')
+      .set('Authorization', auth)
+      .send({ name: unique('Bad'), recipe: { ingredients: [{ amount: '2', item: ' ' }] } })
+      .expect(400);
+  });
+
+  it('shows a recipe saved as plain text (before structured recipes) as its notes', async () => {
+    const { auth } = await asNewUser();
+    const meal = await createMeal(auth);
+    const legacy = unique('Old recipe text');
+    await db.orm.public.Meal.where({ id: meal.id }).update({ recipeText: legacy });
+
+    expect((await getMeal(auth, meal.id)).recipe).toMatchObject({ notes: legacy, steps: [] });
+
+    // The next save moves it into the structured recipe for good.
+    await request(app)
+      .patch(`/meals/${meal.id}`)
+      .set('Authorization', auth)
+      .send({ recipe: { notes: legacy, steps: ['Cook.'] } })
+      .expect(200);
+    const row = await db.orm.public.Meal.where({ id: meal.id }).select('recipeText').first();
+    expect(row?.recipeText).toBeNull();
+    expect((await getMeal(auth, meal.id)).recipe).toMatchObject({
+      notes: legacy,
+      steps: ['Cook.'],
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CalendarDateSchema } from './dates.ts';
+import { RecipeInputSchema, RecipeSchema } from './recipes.ts';
 
 /** Image types photos may be uploaded as (the web app converts to JPEG before upload). */
 export const PHOTO_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
@@ -50,8 +51,8 @@ export type MealSummary = z.infer<typeof MealSummarySchema>;
 export const MealSchema = MealSummarySchema.extend({
   description: z.string().nullable(),
   recipeUrl: z.string().nullable(),
-  /** The recipe as text: read from recipe photos, or typed in. */
-  recipeText: z.string().nullable(),
+  /** The recipe: read from recipe photos, or typed in. Null when there is none. */
+  recipe: RecipeSchema.nullable(),
   /** Photos of the dish and of the recipe, oldest first. */
   photos: MealPhotoSchema.array(),
   /** The most recent night (up to today) this meal was the dinner, or null. */
@@ -85,9 +86,9 @@ export const CreateMealSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
   description: optionalText(2000).optional().describe('Notes: ingredients, how to make it, sides'),
   recipeUrl: recipeUrl.optional().describe('Link to the recipe'),
-  recipeText: optionalText(20000)
+  recipe: RecipeInputSchema.nullable()
     .optional()
-    .describe('The full recipe as text: ingredients and steps'),
+    .describe('The full recipe: ingredients and steps. Null removes it'),
   tags: tags.optional(),
 });
 export type CreateMeal = z.infer<typeof CreateMealSchema>;

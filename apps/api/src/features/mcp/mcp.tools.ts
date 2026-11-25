@@ -33,7 +33,7 @@ const INSTRUCTIONS = `Dinner planner for a household (usually a couple) who plan
 - Dates are calendar dates (YYYY-MM-DD) in the household's time zone. Call get_household or get_week first to learn today's date and the week's dates; never guess them.
 - Meals can be referred to by mealId or by exact name (mealName, case-insensitive). A meal must exist before it is planned: if a name is not found, offer to create it with create_meal.
 - For inspiration, suggest_meals favours meals not eaten recently and skips ones already in the week; shuffle_week adds suggested options to every empty night for the household to vote on.
-- A meal can carry its full recipe as text (recipeText): read automatically from recipe photos uploaded in the web app, or set with create_meal / update_meal. Use get_meal to answer questions about ingredients or steps, and to build shopping lists for the week.
+- A meal can carry its recipe, structured: title, servings, prep and cook times, ingredients (section, amount as written, item, note), steps and notes. It is read automatically from recipe photos uploaded in the web app, or set with create_meal / update_meal. Use get_meal to answer questions about ingredients or steps, and to build shopping lists for the week. Keep amounts as written ("2 tbsp", "a pinch").
 - Photos (of the dish or of its recipe) are added in the web app, not here.`;
 
 const mealRef = {
@@ -286,7 +286,7 @@ export function createMcpServer(services: McpServices, userId: string): McpServe
     {
       title: 'Get meal',
       description:
-        'One meal by mealId or mealName, with its notes, recipe link, full recipe text (ingredients and steps) and history.',
+        'One meal by mealId or mealName, with its notes, recipe link, recipe (ingredients and steps) and history.',
       inputSchema: z.object(mealRef),
       outputSchema: MealSchema,
       annotations: { readOnlyHint: true },
@@ -311,7 +311,7 @@ export function createMcpServer(services: McpServices, userId: string): McpServe
     {
       title: 'Update meal',
       description:
-        'Change a meal’s name, notes, recipe link, recipe text or tags. Only the fields given change; tags replaces the whole list, and recipeText replaces the whole recipe.',
+        'Change a meal’s name, notes, recipe link, recipe or tags. Only the fields given change; tags replaces the whole list, and recipe replaces the whole recipe (send the full recipe, changed where needed, or null to remove it).',
       inputSchema: z.object({ mealId: z.number().int().positive(), ...UpdateMealSchema.shape }),
       outputSchema: MealSchema,
     },

@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'6dec37d2f475b6b9f68163d7d4bb0a8c3c29d7ea8c012859ec2683b36788a54d'>;
+  StorageHashBase<'d04f3e3e05c4be33e4bcb6b48a4836be26c69d0f4ddfac5abe3525473e875ed4'>;
 export type ExecutionHash =
   ExecutionHashBase<'167c022c16f97340aaa8aafd1d91434c1f662492b5aabc3baac56449a88f756d'>;
 export type ProfileHash =
@@ -360,6 +360,7 @@ export namespace Models {
     householdId: FieldOutputTypes['public']['Meal']['householdId'];
     id: FieldOutputTypes['public']['Meal']['id'];
     name: FieldOutputTypes['public']['Meal']['name'];
+    recipe: FieldOutputTypes['public']['Meal']['recipe'];
     recipeText: FieldOutputTypes['public']['Meal']['recipeText'];
     recipeUrl: FieldOutputTypes['public']['Meal']['recipeUrl'];
     tags: FieldOutputTypes['public']['Meal']['tags'];
@@ -748,6 +749,12 @@ type ContractBase = Omit<
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly recipe: {
+                  readonly dataType: 'pg/json';
+                  readonly codecId: 'pg/json@1';
+                  readonly nullable: true;
                   readonly many: false;
                 };
                 readonly recipeText: {
@@ -1294,6 +1301,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly recipe: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/json@1' };
+              };
               readonly recipeText: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -1373,6 +1384,7 @@ type ContractBase = Omit<
                 readonly householdId: { readonly column: 'householdId' };
                 readonly id: { readonly column: 'id' };
                 readonly name: { readonly column: 'name' };
+                readonly recipe: { readonly column: 'recipe' };
                 readonly recipeText: { readonly column: 'recipeText' };
                 readonly recipeUrl: { readonly column: 'recipeUrl' };
                 readonly tags: { readonly column: 'tags' };
