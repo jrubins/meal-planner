@@ -16,6 +16,10 @@ catalog:
 
 allowBuilds:
   esbuild: true
+  # Declined: the Gemini adapter's dependencies. Their scripts do nothing the app needs
+  # (@google/genai's preinstall is a no-op echo; protobufjs's postinstall prints version warnings).
+  '@google/genai': false
+  protobufjs: false
 
 # Prisma 8 RC pins older pg versions; use one current copy everywhere (also what Sentry instruments).
 overrides:
