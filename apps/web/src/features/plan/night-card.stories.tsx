@@ -97,13 +97,62 @@ export const OutOfSuggestions: Story = {
   args: { night: EMPTY_NIGHT, suggestion: null },
 };
 
-/** In a column of the desktop week board: photo on top, buttons on their own lines. */
-export const BoardColumn: Story = {
-  args: { night: VOTING_NIGHT },
-  decorators: [(Story) => <div className="w-48">{Story()}</div>],
+/** A stacked card (phones): clearing the dinner is the ✕ in the card's top-right corner. */
+export const ClearOnPhone: Story = {
+  decorators: [(Story) => <div className="w-[22rem]">{Story()}</div>],
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    // The action labels are hidden at this width, but the buttons keep their names.
+    // One clear button at a time: the corner ✕ here, the labelled one in a desktop row.
+    const clear = canvas.getByRole('button', { name: 'Clear Tuesday’s dinner' });
+    await expect(clear).not.toHaveTextContent('Clear');
+    await userEvent.click(clear);
+    await expect(args.onClearDinner).toHaveBeenCalled();
+  },
+};
+
+/** A night with only a note ("eating out"): a note icon stands where the photo would be. */
+export const NoteOnly: Story = {
+  args: {
+    night: {
+      ...PLANNED_NIGHT,
+      dinner: { date: PLANNED_NIGHT.date, meal: null, note: 'Pizza night out with friends' },
+    },
+  },
+};
+
+/**
+ * A row of the desktop week (the agenda): day, plan and labelled actions side by side, with
+ * the dinner's Clear among the actions.
+ */
+export const AgendaRow: Story = {
+  args: { night: VOTING_NIGHT },
+  decorators: [(Story) => <div className="w-[64rem]">{Story()}</div>],
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(/options? to vote on/)).toBeVisible();
+    await userEvent.click(canvas.getByRole('button', { name: 'Add options for Wednesday' }));
+    await expect(args.onAddOptions).toHaveBeenCalled();
+    await expect(canvas.getByRole('button', { name: 'Pick Fish tacos' })).toBeVisible();
+  },
+};
+
+export const AgendaRowPlanned: Story = {
+  decorators: [(Story) => <div className="w-[64rem]">{Story()}</div>],
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const clear = canvas.getByRole('button', { name: 'Clear Tuesday’s dinner' });
+    await expect(clear).toHaveTextContent('Clear');
+    await userEvent.click(clear);
+    await expect(args.onClearDinner).toHaveBeenCalled();
+  },
+};
+
+/** Very narrow (a small phone): photo on top, icon-only actions that keep their names. */
+export const Narrow: Story = {
+  args: { night: VOTING_NIGHT },
+  decorators: [(Story) => <div className="w-64">{Story()}</div>],
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Shuffle a meal for Wednesday' }));
     await expect(args.onShuffle).toHaveBeenCalled();
     await expect(canvas.getByRole('button', { name: 'Pick Fish tacos' })).toBeVisible();
