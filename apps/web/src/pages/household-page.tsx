@@ -114,7 +114,7 @@ export function HouseholdPage() {
   const alone = household.members.length === 1;
 
   return (
-    <div className="space-y-5">
+    <div className="max-w-2xl space-y-5">
       <div>
         <h1 className="text-3xl font-semibold">{household.name}</h1>
         <p className="text-muted-foreground mt-1 text-sm">

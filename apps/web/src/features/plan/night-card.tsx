@@ -28,7 +28,14 @@ interface NightCardProps extends NightActions {
   suggestion?: Suggestion | null;
 }
 
-/** One night of the week: its dinner, the options being voted on, and ways to plan it. */
+/**
+ * One night of the week: its dinner, the options being voted on, and ways to plan it.
+ *
+ * It lays itself out by its own width (a container query), not the screen's: compact in a
+ * narrow column of the desktop week board (photo on top, icon-only actions), roomier in a
+ * phone-width list. In a board row every card stretches to the row's height, with the
+ * actions pinned to the bottom, so a row of nights lines up whatever each one holds.
+ */
 export function NightCard({ night, today, me, members, suggestion, ...actions }: NightCardProps) {
   const isToday = night.date === today;
   const isPast = night.date < today;
@@ -39,12 +46,12 @@ export function NightCard({ night, today, me, members, suggestion, ...actions }:
     <section
       aria-labelledby={headingId}
       className={cn(
-        'bg-card rounded-xl border p-4 shadow-xs',
+        'bg-card @container flex h-full flex-col gap-3 rounded-xl border p-4 shadow-xs xl:p-3',
         isToday && 'border-primary/50 ring-primary/15 ring-4',
         isPast && !isToday && 'opacity-75',
       )}
     >
-      <header className="mb-3 flex items-baseline gap-2">
+      <header className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <h2 id={headingId} className="text-lg font-semibold">
           {weekdayName(night.date)}
         </h2>
@@ -57,11 +64,18 @@ export function NightCard({ night, today, me, members, suggestion, ...actions }:
       </header>
 
       {dinner ? (
-        <div className="flex items-center gap-4">
-          <MealThumb path={dinner.meal?.coverPhotoPath ?? null} className="size-20" />
-          <div className="min-w-0 flex-1">
+        <div className="relative flex flex-col gap-3 @xs:flex-row @xs:items-center @xs:gap-4">
+          <MealThumb
+            path={dinner.meal?.coverPhotoPath ?? null}
+            className={cn(
+              'aspect-[4/3] w-full @xs:aspect-auto @xs:size-20',
+              // A night with only a note ("eating out") has no photo worth the space.
+              !dinner.meal && '@max-xs:hidden',
+            )}
+          />
+          <div className="min-w-0 flex-1 pr-8 @xs:pr-0">
             {dinner.meal ? (
-              <p className="line-clamp-2 text-lg leading-snug font-semibold sm:text-xl">
+              <p className="line-clamp-3 text-base leading-snug font-semibold @xs:line-clamp-2 @xs:text-lg @md:text-xl">
                 {dinner.meal.name}
               </p>
             ) : null}
@@ -70,7 +84,7 @@ export function NightCard({ night, today, me, members, suggestion, ...actions }:
                 className={cn(
                   dinner.meal
                     ? 'text-muted-foreground text-sm'
-                    : 'text-lg font-semibold sm:text-xl',
+                    : 'text-base font-semibold @xs:text-lg @md:text-xl',
                 )}
               >
                 {dinner.note}
@@ -83,21 +97,25 @@ export function NightCard({ night, today, me, members, suggestion, ...actions }:
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground self-start"
+            className="text-muted-foreground absolute right-0 bottom-0 @xs:static @xs:self-start"
             aria-label={`Clear ${weekdayName(night.date)}’s dinner`}
             onClick={actions.onClearDinner}
           >
             <X />
           </Button>
         </div>
+      ) : night.options.length > 0 ? (
+        <p className="text-muted-foreground text-sm italic">Not decided yet</p>
       ) : (
-        <p className="text-muted-foreground text-sm italic">
-          {night.options.length > 0 ? 'Not decided yet' : 'Nothing planned yet'}
+        // In a board row this panel fills the card's spare height, so an empty night reads
+        // as deliberately empty rather than as a short card.
+        <p className="text-muted-foreground flex min-h-16 flex-1 items-center justify-center rounded-lg border border-dashed px-2 text-center text-sm italic @xs:min-h-0 @xs:flex-none @xs:justify-start @xs:border-0 @xs:px-0 @xs:text-left">
+          Nothing planned yet
         </p>
       )}
 
       {night.options.length > 0 ? (
-        <div className="mt-3">
+        <div>
           <h3 className="text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase">
             Options
           </h3>
@@ -119,7 +137,7 @@ export function NightCard({ night, today, me, members, suggestion, ...actions }:
 
       {suggestion !== undefined ? (
         <div
-          className="border-primary/30 bg-primary/5 mt-3 rounded-lg border border-dashed p-3"
+          className="border-primary/30 bg-primary/5 rounded-lg border border-dashed p-3"
           role="status"
         >
           {suggestion ? (
@@ -172,33 +190,36 @@ export function NightCard({ night, today, me, members, suggestion, ...actions }:
         </div>
       ) : null}
 
-      <div className="-mx-2 mt-3 flex flex-wrap gap-0.5 border-t pt-2">
+      <div className="-mx-2 mt-auto flex flex-wrap gap-0.5 border-t pt-2">
         <Button
           variant="ghost"
           size="sm"
           onClick={actions.onPlan}
+          title={dinner ? 'Change' : 'Plan'}
           aria-label={`${dinner ? 'Change' : 'Plan'} ${weekdayName(night.date)}’s dinner`}
         >
           <UtensilsCrossed />
-          {dinner ? 'Change' : 'Plan'}
+          <span className="hidden @xs:inline">{dinner ? 'Change' : 'Plan'}</span>
         </Button>
         <Button
           variant="ghost"
           size="sm"
           onClick={actions.onAddOptions}
+          title="Options"
           aria-label={`Add options for ${weekdayName(night.date)}`}
         >
           <ListPlus />
-          Options
+          <span className="hidden @xs:inline">Options</span>
         </Button>
         <Button
           variant="ghost"
           size="sm"
           onClick={actions.onShuffle}
+          title="Shuffle"
           aria-label={`Shuffle a meal for ${weekdayName(night.date)}`}
         >
           <Sparkles />
-          Shuffle
+          <span className="hidden @xs:inline">Shuffle</span>
         </Button>
       </div>
     </section>

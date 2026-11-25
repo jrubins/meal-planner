@@ -96,3 +96,16 @@ export const WithSuggestion: Story = {
 export const OutOfSuggestions: Story = {
   args: { night: EMPTY_NIGHT, suggestion: null },
 };
+
+/** In a column of the desktop week board: photo on top, buttons on their own lines. */
+export const BoardColumn: Story = {
+  args: { night: VOTING_NIGHT },
+  decorators: [(Story) => <div className="w-48">{Story()}</div>],
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    // The action labels are hidden at this width, but the buttons keep their names.
+    await userEvent.click(canvas.getByRole('button', { name: 'Shuffle a meal for Wednesday' }));
+    await expect(args.onShuffle).toHaveBeenCalled();
+    await expect(canvas.getByRole('button', { name: 'Pick Fish tacos' })).toBeVisible();
+  },
+};

@@ -154,7 +154,10 @@ export function MealsPage() {
       ) : shown.length === 0 ? (
         <p className="text-muted-foreground text-sm">No meals match.</p>
       ) : (
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label="Meals">
+        <ul
+          className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+          aria-label="Meals"
+        >
           {shown.map((meal) => (
             <li key={meal.id}>
               <MealCard meal={meal} today={household.today} />
