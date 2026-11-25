@@ -1,8 +1,7 @@
-import type { Suggestion } from '@app/shared';
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { cn } from 'cn';
-import { Plus, Search, Sparkles, X } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,16 +16,13 @@ import { Label } from '@/components/ui/label';
 import { householdQueryOptions } from '@/features/household/queries';
 import { MealCard } from '@/features/meals/meal-card';
 import { MealForm } from '@/features/meals/meal-form';
-import { MealThumb } from '@/features/meals/meal-thumb';
 import type { NewMealPhotos } from '@/features/meals/new-meal-photos';
 import {
-  fetchSuggestions,
   mealsQueryOptions,
   uploadPhoto,
   useCreateMeal,
   useGeneratePhoto,
 } from '@/features/meals/queries';
-import { lastHad } from '@/lib/format';
 import { resizeImage } from '@/lib/resize-image';
 
 export function MealsPage() {
@@ -41,7 +37,6 @@ export function MealsPage() {
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [surprise, setSurprise] = useState<Suggestion | null>(null);
 
   const tags = [...new Set(meals.flatMap((meal) => meal.tags))].sort();
   const needle = query.trim().toLowerCase();
@@ -89,11 +84,6 @@ export function MealsPage() {
     await navigate({ to: '/meals/$mealId', params: { mealId: meal.id } });
   }
 
-  async function surpriseMe() {
-    const [pick] = await fetchSuggestions(household.today, 1, surprise ? [surprise.meal.id] : []);
-    setSurprise(pick ?? null);
-  }
-
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -104,51 +94,12 @@ export function MealsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          {meals.length > 0 ? (
-            <Button variant="outline" onClick={() => void surpriseMe()}>
-              <Sparkles />
-              Surprise me
-            </Button>
-          ) : null}
           <Button onClick={() => setCreating(true)}>
             <Plus />
             New meal
           </Button>
         </div>
       </div>
-
-      {surprise ? (
-        <div
-          role="status"
-          className="border-primary/30 bg-primary/5 flex items-center gap-3 rounded-xl border border-dashed p-3"
-        >
-          <MealThumb path={surprise.meal.coverPhotoPath} className="size-14" />
-          <div className="min-w-0 flex-1">
-            <p className="text-muted-foreground text-xs">How about…</p>
-            <Link
-              to="/meals/$mealId"
-              params={{ mealId: surprise.meal.id }}
-              className="font-semibold hover:underline"
-            >
-              {surprise.meal.name}
-            </Link>
-            <p className="text-muted-foreground text-xs">
-              {lastHad(surprise.lastEatenOn, household.today)}
-            </p>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => void surpriseMe()}>
-            Another
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Close suggestion"
-            onClick={() => setSurprise(null)}
-          >
-            <X />
-          </Button>
-        </div>
-      ) : null}
 
       {meals.length > 0 ? (
         <div className="space-y-3">

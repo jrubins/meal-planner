@@ -133,7 +133,7 @@ export function MealPickerDialog({
           />
         </div>
 
-        <ul className="-mx-2 min-h-0 flex-1 overflow-y-auto" aria-label="Meals">
+        <ul className="-mx-2 min-h-0 flex-1 space-y-1 overflow-y-auto" aria-label="Meals">
           {shown.map((meal) => {
             const proposed = proposedMealIds.includes(meal.id);
             const isSelected = selected.includes(meal.id);

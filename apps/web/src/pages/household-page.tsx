@@ -1,5 +1,6 @@
 import { JoinHouseholdSchema, UpdateHouseholdSchema, UpdateMemberSchema } from '@app/shared';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { cn } from 'cn';
 import { Check, Copy, RefreshCw } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,6 @@ import {
   useUpdateMe,
 } from '@/features/household/queries';
 import { ApiRequestError } from '@/lib/api';
-import { memberName } from '@/lib/format';
 
 function Section({
   title,
@@ -118,10 +118,46 @@ export function HouseholdPage() {
       <div>
         <h1 className="text-3xl font-semibold">{household.name}</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          {household.members.map((m) => memberName(m, household.me)).join(' & ')} · Times in{' '}
-          {household.timeZone.replaceAll('_', ' ')}
+          Times in {household.timeZone.replaceAll('_', ' ')}
         </p>
       </div>
+
+      <Section title="Members">
+        <ul className="divide-y" aria-label="Members">
+          {household.members.map((member) => {
+            const isMe = member.userId === household.me;
+            const name = member.displayName ?? (isMe ? 'You' : 'No name yet');
+            return (
+              <li key={member.userId} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
+                <span
+                  aria-hidden
+                  className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold"
+                >
+                  {member.displayName?.trim().charAt(0).toUpperCase() ?? '?'}
+                </span>
+                <span
+                  className={cn(
+                    'flex-1 font-medium',
+                    !member.displayName && 'text-muted-foreground',
+                  )}
+                >
+                  {name}
+                </span>
+                {isMe ? (
+                  <span className="bg-secondary rounded-full px-2.5 py-0.5 text-xs font-medium">
+                    You
+                  </span>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+        {alone ? (
+          <p className="text-muted-foreground text-sm">
+            Just you so far. Share the invite code below and your partner shows up here.
+          </p>
+        ) : null}
+      </Section>
 
       <Section
         title="Invite your partner"
