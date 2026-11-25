@@ -24,6 +24,7 @@ import {
   useUpdateMeal,
   useUploadPhoto,
 } from '@/features/meals/queries';
+import { RecipeEditor } from '@/features/meals/recipe-editor';
 import { RecipeSection } from '@/features/meals/recipe-section';
 import { apiUrl } from '@/lib/api';
 import { lastEaten, monthDay } from '@/lib/format';
@@ -41,6 +42,7 @@ export function MealPage({ mealId }: { mealId: number }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -205,14 +207,31 @@ export function MealPage({ mealId }: { mealId: number }) {
       ) : null}
 
       <RecipeSection
-        recipeText={meal.recipeText}
+        recipe={meal.recipe}
         photos={recipePhotos}
         uploading={uploadPhoto.isPending}
         onAddPhotos={(files) => void upload(files, 'recipe')}
         onReread={(photoId) => rereadPhoto.mutate(photoId)}
         onDeletePhoto={(photoId) => deletePhoto.mutate(photoId)}
-        onEdit={() => setEditing(true)}
+        onEdit={() => setEditingRecipe(true)}
       />
+
+      <Dialog open={editingRecipe} onOpenChange={setEditingRecipe}>
+        <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{meal.recipe ? 'Edit recipe' : 'Add recipe'}</DialogTitle>
+            <DialogDescription>Empty rows are left out when you save.</DialogDescription>
+          </DialogHeader>
+          <RecipeEditor
+            recipe={meal.recipe}
+            onCancel={() => setEditingRecipe(false)}
+            onSave={async (recipe) => {
+              await updateMeal.mutateAsync({ recipe });
+              setEditingRecipe(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={editing} onOpenChange={setEditing}>
         <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-md">

@@ -1,6 +1,7 @@
 import type { MealPhoto, RecipeReadStatus } from '@app/shared';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { SAMPLE_RECIPE } from '@/test/sample-data';
 import { RecipeSection } from './recipe-section';
 
 const photo = (id: number, readStatus: RecipeReadStatus): MealPhoto => ({
@@ -12,23 +13,11 @@ const photo = (id: number, readStatus: RecipeReadStatus): MealPhoto => ({
   createdAt: '2026-11-24T12:00:00.000Z',
 });
 
-const RECIPE = `Chicken tikka masala
-Serves 4
-
-Ingredients:
-- 600 g chicken thighs
-- 200 g yogurt
-- 1 tbsp garam masala
-
-Steps:
-1. Marinate the chicken overnight.
-2. Grill, then simmer in the sauce for 15 minutes.`;
-
 const meta = {
   title: 'Meals/RecipeSection',
   component: RecipeSection,
   args: {
-    recipeText: null,
+    recipe: null,
     photos: [],
     uploading: false,
     onAddPhotos: fn(),
@@ -46,7 +35,7 @@ export const NoRecipeYet: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('button', { name: 'Add recipe photo' })).toBeEnabled();
-    await expect(canvas.queryByRole('button', { name: 'Edit text' })).not.toBeInTheDocument();
+    await expect(canvas.getByRole('button', { name: 'Type it in' })).toBeInTheDocument();
   },
 };
 
@@ -61,17 +50,17 @@ export const Reading: Story = {
 /** Two pages read into the text; one photo didn't work and can be tried again. */
 export const ReadWithAFailure: Story = {
   args: {
-    recipeText: RECIPE,
+    recipe: SAMPLE_RECIPE,
     photos: [photo(1, 'done'), photo(2, 'failed'), photo(3, 'not_a_recipe')],
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText(/Marinate the chicken overnight/)).toBeInTheDocument();
+    await expect(canvas.getByText(/leave overnight in the fridge/)).toBeInTheDocument();
     await userEvent.click(canvas.getByRole('button', { name: 'Try again' }));
     await expect(args.onReread).toHaveBeenCalledWith(2);
     await userEvent.click(canvas.getByRole('button', { name: 'Delete recipe photo 3' }));
     await expect(args.onDeletePhoto).toHaveBeenCalledWith(3);
-    await userEvent.click(canvas.getByRole('button', { name: 'Edit text' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Edit' }));
     await expect(args.onEdit).toHaveBeenCalled();
   },
 };

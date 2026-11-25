@@ -2,6 +2,11 @@ import * as Sentry from '@sentry/node';
 import type { Db } from '@app/db';
 import {
   daysBetween,
+  EMPTY_RECIPE,
+  isEmptyRecipe,
+  mergeRecipes,
+  RecipeSchema,
+  recipeText,
   PhotoContentTypeSchema,
   PhotoKindSchema,
   RecipeReadStatusSchema,
@@ -12,6 +17,7 @@ import {
   type MealSummary,
   type PhotoContentType,
   type PhotoKind,
+  type Recipe,
   type RecipeReadStatus,
   type Suggestion,
   type UpdateMeal,
@@ -36,6 +42,7 @@ type MealRow = {
   name: string;
   description: string | null;
   recipeUrl: string | null;
+  recipe: unknown;
   recipeText: string | null;
   tags: readonly string[];
   createdAt: Date;
@@ -53,9 +60,20 @@ const toMealPhoto = (photo: StoredPhoto): MealPhoto => ({
   createdAt: photo.createdAt.toISOString(),
 });
 
-/** The recipe text with one more photo's reading added after it. */
-const appendRecipe = (current: string | null, text: string) =>
-  current?.trim() ? `${current.trimEnd()}\n\n${text}` : text;
+/**
+ * A meal's recipe. Meals from before structured recipes may still hold plain text
+ * (recipeText): it reads as the recipe's notes until the meal's recipe is next saved.
+ */
+function toRecipe(meal: Pick<MealRow, 'recipe' | 'recipeText'>): Recipe | null {
+  if (meal.recipe != null) {
+    const parsed = RecipeSchema.safeParse(meal.recipe);
+    if (parsed.success) return parsed.data;
+  }
+  return meal.recipeText?.trim() ? { ...EMPTY_RECIPE, notes: meal.recipeText.trim() } : null;
+}
+
+/** What to store for a recipe: nothing when it's empty. */
+const storedRecipe = (recipe: Recipe | null) => (recipe && !isEmptyRecipe(recipe) ? recipe : null);
 
 /** The first bytes of each accepted image type, so an upload is what it claims to be. */
 function looksLike(contentType: PhotoContentType, data: Uint8Array): boolean {
@@ -104,21 +122,22 @@ export function createMealsService(
   const Meals = db.orm.public.Meal;
 
   /**
-   * Adds text to a meal's recipe. Several recipe photos can finish reading at once, so the
-   * write only applies if the text is still what was read, and retries otherwise: no reading
-   * overwrites another.
+   * Adds a page read from a photo to a meal's recipe. Several recipe photos can finish
+   * reading at once, so the write only applies if the meal is unchanged since it was read
+   * (its updatedAt, which every write moves), and retries otherwise: no page overwrites another.
    */
-  async function addRecipeText(mealId: number, text: string): Promise<void> {
+  async function addRecipePage(mealId: number, page: Recipe): Promise<void> {
     for (let attempt = 0; attempt < 5; attempt++) {
-      const meal = await Meals.where({ id: mealId }).select('recipeText').first();
+      const meal = await Meals.where({ id: mealId })
+        .select('recipe', 'recipeText', 'updatedAt')
+        .first();
       if (!meal) return; // The meal was deleted while its photo was being read.
-      const current = meal.recipeText;
       const updated = await Meals.where({ id: mealId })
-        .where((m) => (current === null ? m.recipeText.isNull() : m.recipeText.eq(current)))
-        .updateAndCount({ recipeText: appendRecipe(current, text) });
+        .where((m) => m.updatedAt.eq(meal.updatedAt))
+        .updateAndCount({ recipe: mergeRecipes(toRecipe(meal), page), recipeText: null });
       if (updated > 0) return;
     }
-    throw new Error(`Recipe text for meal ${mealId} kept changing; reading not saved`);
+    throw new Error(`Recipe for meal ${mealId} kept changing; reading not saved`);
   }
 
   /** Reads one recipe photo into the meal's recipe text, recording how it went. */
@@ -132,7 +151,7 @@ export function createMealsService(
     try {
       const reading = await reader.read(image);
       if (reading.isRecipe) {
-        await addRecipeText(mealId, reading.text);
+        await addRecipePage(mealId, reading.recipe);
         status = 'done';
       } else {
         status = 'not_a_recipe';
@@ -214,7 +233,7 @@ export function createMealsService(
       ...toSummary(meal, mealPhotos),
       description: meal.description,
       recipeUrl: meal.recipeUrl,
-      recipeText: meal.recipeText,
+      recipe: toRecipe(meal),
       photos: mealPhotos,
       lastEatenOn: history?.lastEatenOn ?? null,
       timesEaten: history?.timesEaten ?? 0,
@@ -237,8 +256,9 @@ export function createMealsService(
     if (query.tag && !meal.tags.includes(query.tag)) return false;
     if (!query.q) return true;
     const needle = query.q.toLowerCase();
-    return [meal.name, meal.description ?? '', meal.recipeText ?? '', ...meal.tags].some((text) =>
-      text.toLowerCase().includes(needle),
+    const recipe = toRecipe(meal);
+    return [meal.name, meal.description ?? '', recipe ? recipeText(recipe) : '', ...meal.tags].some(
+      (text) => text.toLowerCase().includes(needle),
     );
   }
 
@@ -273,7 +293,7 @@ export function createMealsService(
         name: input.name,
         description: input.description ?? null,
         recipeUrl: input.recipeUrl ?? null,
-        recipeText: input.recipeText ?? null,
+        recipe: storedRecipe(input.recipe ?? null),
         tags: input.tags ?? [],
       });
       Sentry.metrics.count('meals.created', 1);
@@ -283,9 +303,13 @@ export function createMealsService(
     async update(userId: string, id: number, input: UpdateMeal): Promise<Meal> {
       const household = await households.context(userId);
       await row(household.id, id);
-      const changes = Object.fromEntries(
-        Object.entries(input).filter(([, value]) => value !== undefined),
+      const { recipe, ...fields } = input;
+      const changes: Record<string, unknown> = Object.fromEntries(
+        Object.entries(fields).filter(([, value]) => value !== undefined),
       );
+      // Saving the recipe also retires any plain text from before structured recipes.
+      if (recipe !== undefined)
+        Object.assign(changes, { recipe: storedRecipe(recipe), recipeText: null });
       if (Object.keys(changes).length > 0) {
         await Meals.where({ id, householdId: household.id }).update(changes);
       }

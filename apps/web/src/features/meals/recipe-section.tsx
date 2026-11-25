@@ -1,13 +1,14 @@
-import type { MealPhoto, RecipeReadStatus } from '@app/shared';
+import type { MealPhoto, Recipe, RecipeReadStatus } from '@app/shared';
 import { cn } from 'cn';
 import { Check, FileText, LoaderCircle, RotateCw, Trash2, TriangleAlert } from 'lucide-react';
 import { useRef, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { apiUrl } from '@/lib/api';
+import { RecipeCard } from './recipe-card';
 
 interface RecipeSectionProps {
-  /** The recipe as text, or null when there is none yet. */
-  recipeText: string | null;
+  /** The recipe, or null when there is none yet. */
+  recipe: Recipe | null;
   /** The meal's recipe photos (photos of the dish are shown elsewhere). */
   photos: MealPhoto[];
   uploading: boolean;
@@ -50,7 +51,7 @@ const STATUS: Record<RecipeReadStatus, { label: string; icon: ReactNode; tone: s
  * photo has Claude read it, and the text is added to the recipe when that finishes.
  */
 export function RecipeSection({
-  recipeText,
+  recipe,
   photos,
   uploading,
   onAddPhotos,
@@ -68,11 +69,9 @@ export function RecipeSection({
           Recipe
         </h2>
         <div className="flex gap-1">
-          {recipeText ? (
-            <Button variant="ghost" size="sm" onClick={onEdit}>
-              Edit text
-            </Button>
-          ) : null}
+          <Button variant="ghost" size="sm" onClick={onEdit}>
+            {recipe ? 'Edit' : 'Type it in'}
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -97,13 +96,13 @@ export function RecipeSection({
         />
       </div>
 
-      {recipeText ? (
-        <p className="leading-relaxed whitespace-pre-line">{recipeText}</p>
+      {recipe ? (
+        <RecipeCard recipe={recipe} />
       ) : (
         <p className="text-muted-foreground text-sm">
           {reading
-            ? 'Reading your recipe photo. The text appears here in a moment.'
-            : 'Snap the cookbook page or recipe card and the recipe is typed up here, ready for you and Claude to read. You can also type it in with Edit.'}
+            ? 'Reading your recipe photo. The recipe appears here in a moment.'
+            : 'Snap the cookbook page or recipe card and the recipe is typed up here, ready for you and Claude to read.'}
         </p>
       )}
 

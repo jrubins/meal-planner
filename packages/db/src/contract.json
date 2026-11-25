@@ -503,6 +503,13 @@
                   "kind": "scalar"
                 }
               },
+              "recipe": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/json@1",
+                  "kind": "scalar"
+                }
+              },
               "recipeText": {
                 "nullable": true,
                 "type": {
@@ -620,6 +627,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "recipe": {
+                  "column": "recipe"
                 },
                 "recipeText": {
                   "column": "recipeText"
@@ -1255,6 +1265,11 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
+                "recipe": {
+                  "codecId": "pg/json@1",
+                  "dataType": "pg/json",
+                  "nullable": true
+                },
                 "recipeText": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
@@ -1535,7 +1550,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "6dec37d2f475b6b9f68163d7d4bb0a8c3c29d7ea8c012859ec2683b36788a54d"
+    "storageHash": "d04f3e3e05c4be33e4bcb6b48a4836be26c69d0f4ddfac5abe3525473e875ed4"
   },
   "execution": {
     "executionHash": "167c022c16f97340aaa8aafd1d91434c1f662492b5aabc3baac56449a88f756d",

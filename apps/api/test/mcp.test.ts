@@ -147,6 +147,42 @@ describe('MCP endpoint', () => {
     await client.close();
   });
 
+  it('saves a structured recipe and reads it back', async () => {
+    const client = await connect(uniqueUserId());
+    const name = unique('Tikka masala');
+    const created = MealSchema.parse(
+      (
+        await client.callTool({
+          name: 'create_meal',
+          arguments: {
+            name,
+            recipe: {
+              servings: '4',
+              ingredients: [
+                { section: 'Marinade', amount: '200 g', item: 'yogurt' },
+                { section: 'Sauce', amount: '1 tbsp', item: 'garam masala', note: 'toasted' },
+              ],
+              steps: ['Marinate overnight.', 'Simmer for 15 minutes.'],
+            },
+          },
+        })
+      ).structuredContent,
+    );
+
+    const read = MealSchema.parse(
+      (await client.callTool({ name: 'get_meal', arguments: { mealName: name } }))
+        .structuredContent,
+    );
+    expect(read.recipe).toEqual(created.recipe);
+    expect(read.recipe?.ingredients[1]).toEqual({
+      section: 'Sauce',
+      amount: '1 tbsp',
+      item: 'garam masala',
+      note: 'toasted',
+    });
+    await client.close();
+  });
+
   it("acts as the signed-in user, on that user's household only", async () => {
     const alice = await connect(uniqueUserId());
     const bob = await connect(uniqueUserId());

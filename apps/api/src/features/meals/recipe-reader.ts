@@ -2,11 +2,11 @@ import { chat } from '@tanstack/ai';
 import { ANTHROPIC_MODELS, createAnthropicChat } from '@tanstack/ai-anthropic';
 import { createGeminiChat, GEMINI_MODELS } from '@tanstack/ai-gemini';
 import { createOpenaiChat, OPENAI_CHAT_MODELS } from '@tanstack/ai-openai';
-import type { PhotoContentType } from '@app/shared';
+import { isEmptyRecipe, RecipeInputSchema, type PhotoContentType, type Recipe } from '@app/shared';
 import { z } from 'zod';
 
-/** What reading one photo found: the recipe as text, or that the photo shows no recipe. */
-export type RecipeReading = { isRecipe: true; text: string } | { isRecipe: false };
+/** What reading one photo found: the recipe on it, or that the photo shows no recipe. */
+export type RecipeReading = { isRecipe: true; recipe: Recipe } | { isRecipe: false };
 
 /**
  * Reads a recipe from a photo (a cookbook page, a recipe card, a screenshot). The meals
@@ -27,26 +27,38 @@ const PROVIDERS = {
   gemini: { models: GEMINI_MODELS, defaultModel: null },
 } as const satisfies Record<AiProvider, { models: readonly string[]; defaultModel: string | null }>;
 
+/**
+ * What the model fills in. Every field is present (null when the page doesn't show it): the
+ * most portable shape for providers' structured output. RecipeInputSchema then tidies it.
+ */
+const nullableText = (description: string) => z.string().nullable().meta({ description });
 const ReadingSchema = z.object({
   is_recipe: z.boolean().meta({ description: 'Whether the photo shows a recipe' }),
-  recipe: z
-    .string()
-    .meta({ description: 'The transcribed recipe, or an empty string if there is none' }),
+  title: nullableText('The recipe title, if shown'),
+  servings: nullableText('Servings or yield as written, e.g. "4", "4–6", "1 loaf"'),
+  prep_time: nullableText('Prep time as written, e.g. "20 min"'),
+  cook_time: nullableText('Cook time as written, e.g. "40 min"'),
+  ingredients: z
+    .array(
+      z.object({
+        section: nullableText('Group heading it is listed under, e.g. "For the sauce"'),
+        amount: nullableText('Quantity as written, e.g. "2 tbsp", "400 g", "a pinch"'),
+        item: z.string().meta({ description: 'The ingredient, e.g. "garam masala"' }),
+        note: nullableText('Preparation or alternatives, e.g. "finely chopped", "or ghee"'),
+      }),
+    )
+    .meta({ description: 'In the order shown' }),
+  steps: z.array(z.string()).meta({ description: 'In order, one entry per step, without numbers' }),
+  notes: nullableText('Tips, variations or storage notes from the page'),
 });
 
 const INSTRUCTIONS = `This photo was uploaded to a household's meal planner as a picture of a recipe: a cookbook page, a handwritten card, a printout or a screenshot.
 
-Transcribe the recipe into plain text so the household can read it later and an assistant can answer questions about it. Keep the recipe's own words and quantities; don't add, convert or improve anything. Lay it out as:
+Transcribe the recipe into the structured fields so the household can read it later and an assistant can answer questions about it. Keep the recipe's own words and quantities: don't add, convert or improve anything, and keep amounts exactly as written ("2 tbsp", "a pinch"). Use null for anything the page doesn't show. When ingredients are grouped under headings ("For the sauce"), give each one its heading as its section.
 
-- the title on the first line, if the photo shows one
-- servings, prep and cook times, if shown
-- "Ingredients:" followed by one ingredient per line, starting with "- "
-- "Steps:" followed by numbered steps
-- any notes or tips from the page at the end
+If the photo shows only part of a recipe (for example the second page), transcribe that part. If part of the page is cut off or unreadable, transcribe what you can and write "[unreadable]" where text is missing.
 
-Use plain text only, no Markdown headings or bold. If part of the page is cut off or unreadable, transcribe what you can and add "[unreadable]" where text is missing.
-
-If the photo does not show a recipe, set is_recipe to false and recipe to an empty string.`;
+If the photo does not show a recipe, set is_recipe to false and leave the other fields empty.`;
 
 export interface AiConfig {
   provider: AiProvider;
@@ -113,8 +125,18 @@ export function createRecipeReader({ provider, model, apiKey }: AiConfig): Recip
         ],
         outputSchema: ReadingSchema,
       });
-      const text = reading.recipe.trim();
-      return reading.is_recipe && text ? { isRecipe: true, text } : { isRecipe: false };
+      if (!reading.is_recipe) return { isRecipe: false };
+      // Normalises the model's output: trims, drops blank ingredients and steps, applies limits.
+      const recipe = RecipeInputSchema.parse({
+        title: reading.title,
+        servings: reading.servings,
+        prepTime: reading.prep_time,
+        cookTime: reading.cook_time,
+        ingredients: reading.ingredients.filter((i) => i.item.trim()),
+        steps: reading.steps.filter((step) => step.trim()),
+        notes: reading.notes,
+      });
+      return isEmptyRecipe(recipe) ? { isRecipe: false } : { isRecipe: true, recipe };
     },
   };
 }
