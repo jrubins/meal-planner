@@ -64,9 +64,11 @@ resource "vercel_project_environment_variables" "api" {
         SENTRY_DSN                = data.sentry_key.api.dsn["public"]
         SENTRY_ENVIRONMENT        = "production"
         SENTRY_TRACES_SAMPLE_RATE = tostring(var.sentry_traces_sample_rate)
+        AI_PROVIDER               = var.ai_provider
       },
       # Vercel rejects empty values, so the allowlist is only set when it has entries.
       length(var.allowed_user_ids) > 0 ? { ALLOWED_USER_IDS = join(",", var.allowed_user_ids) } : {},
+      var.ai_model != null ? { AI_MODEL = var.ai_model } : {},
     ) : { key = key, value = value, target = local.production, sensitive = false }
   ]
 }
@@ -100,6 +102,18 @@ resource "vercel_project_environment_variable" "workos_api_key" {
   comment          = "WorkOS API key for server-side sign-in (managed by Terraform)"
   value_wo         = var.workos_api_key
   value_wo_version = var.workos_api_key_version
+  target           = local.production
+  sensitive        = true
+}
+
+resource "vercel_project_environment_variable" "ai_api_key" {
+  count = var.ai_api_key_version > 0 ? 1 : 0
+
+  project_id       = vercel_project.api.id
+  key              = "AI_API_KEY"
+  comment          = "API key of the AI provider that reads recipe photos (managed by Terraform)"
+  value_wo         = var.ai_api_key
+  value_wo_version = var.ai_api_key_version
   target           = local.production
   sensitive        = true
 }

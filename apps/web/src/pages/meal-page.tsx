@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { cn } from 'cn';
 import { ArrowLeft, Camera, ExternalLink, Pencil, Trash2, X } from 'lucide-react';
 import { useRef, useState } from 'react';
+import type { PhotoKind } from '@app/shared';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,9 +20,11 @@ import {
   mealQueryOptions,
   useDeleteMeal,
   useDeletePhoto,
+  useRereadPhoto,
   useUpdateMeal,
   useUploadPhoto,
 } from '@/features/meals/queries';
+import { RecipeSection } from '@/features/meals/recipe-section';
 import { apiUrl } from '@/lib/api';
 import { lastEaten, monthDay } from '@/lib/format';
 import { resizeImage } from '@/lib/resize-image';
@@ -33,6 +36,7 @@ export function MealPage({ mealId }: { mealId: number }) {
   const deleteMeal = useDeleteMeal();
   const uploadPhoto = useUploadPhoto(mealId);
   const deletePhoto = useDeletePhoto(mealId);
+  const rereadPhoto = useRereadPhoto(mealId);
   const navigate = useNavigate();
   const fileInput = useRef<HTMLInputElement>(null);
   const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null);
@@ -40,18 +44,19 @@ export function MealPage({ mealId }: { mealId: number }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const selected = meal.photos.find((p) => p.id === selectedPhotoId) ?? meal.photos[0];
+  const dishPhotos = meal.photos.filter((photo) => photo.kind === 'meal');
+  const recipePhotos = meal.photos.filter((photo) => photo.kind === 'recipe');
+  const selected = dishPhotos.find((p) => p.id === selectedPhotoId) ?? dishPhotos[0];
 
-  async function upload(files: FileList | null) {
+  async function upload(files: File[], kind: PhotoKind) {
     setUploadError(null);
     try {
-      for (const file of Array.from(files ?? [])) {
-        await uploadPhoto.mutateAsync(await resizeImage(file));
+      // One at a time, in the order chosen: recipe pages are read in that order.
+      for (const file of files) {
+        await uploadPhoto.mutateAsync({ photo: await resizeImage(file), kind });
       }
     } catch {
       setUploadError('That photo couldn’t be added. Try a JPEG or PNG.');
-    } finally {
-      if (fileInput.current) fileInput.current.value = '';
     }
   }
 
@@ -94,12 +99,12 @@ export function MealPage({ mealId }: { mealId: number }) {
             className="bg-secondary text-muted-foreground hover:text-foreground flex aspect-[16/9] w-full flex-col items-center justify-center gap-2"
           >
             <Camera className="size-8" strokeWidth={1.5} aria-hidden />
-            <span className="text-sm">Add a photo</span>
+            <span className="text-sm">Add a photo of the dish</span>
           </button>
         )}
-        {meal.photos.length > 0 ? (
+        {dishPhotos.length > 0 ? (
           <div className="flex gap-2 overflow-x-auto p-2">
-            {meal.photos.map((photo) => (
+            {dishPhotos.map((photo) => (
               <button
                 key={photo.id}
                 type="button"
@@ -130,8 +135,11 @@ export function MealPage({ mealId }: { mealId: number }) {
           accept="image/*"
           multiple
           className="sr-only"
-          aria-label="Upload photos"
-          onChange={(event) => void upload(event.target.files)}
+          aria-label="Upload photos of the dish"
+          onChange={(event) => {
+            void upload(Array.from(event.target.files ?? []), 'meal');
+            event.target.value = '';
+          }}
         />
       </div>
       {uploadPhoto.isPending ? (
@@ -192,12 +200,22 @@ export function MealPage({ mealId }: { mealId: number }) {
           className="text-primary inline-flex items-center gap-1.5 font-medium hover:underline"
         >
           <ExternalLink className="size-4" aria-hidden />
-          Open the recipe
+          Open the recipe link
         </a>
       ) : null}
 
+      <RecipeSection
+        recipeText={meal.recipeText}
+        photos={recipePhotos}
+        uploading={uploadPhoto.isPending}
+        onAddPhotos={(files) => void upload(files, 'recipe')}
+        onReread={(photoId) => rereadPhoto.mutate(photoId)}
+        onDeletePhoto={(photoId) => deletePhoto.mutate(photoId)}
+        onEdit={() => setEditing(true)}
+      />
+
       <Dialog open={editing} onOpenChange={setEditing}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit meal</DialogTitle>
             <DialogDescription>Changes show everywhere this meal is planned.</DialogDescription>

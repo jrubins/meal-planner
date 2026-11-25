@@ -15,6 +15,12 @@ options you're deciding between, and your meal library with photos.
   each meal was last eaten. Photos are resized in the browser and stored in Postgres, behind a
   `PhotoStore` interface (`apps/api/src/features/meals/photo-store.ts`) so they can move to blob
   storage later without changing the API.
+- **Recipes:** each meal can have photos of the dish and photos of its recipe (a cookbook page,
+  a card, a screenshot). An AI model (Claude by default) reads each recipe photo in the background and adds the recipe
+  to the meal as text, which you can edit and Claude can read back in chat. Reading goes through
+  [TanStack AI](https://tanstack.com/ai), so the provider is a setting: `AI_PROVIDER`
+  (`anthropic`, `openai` or `gemini`), `AI_MODEL` and `AI_API_KEY`
+  (`apps/api/src/features/meals/recipe-reader.ts`). Without a key, recipe photos are kept unread.
 - **Inspiration:** suggestions favour meals you haven't had for a while and skip ones already in
   the week. **Shuffle** suggests one meal for a night; **Fill empty nights** adds two options to
   every unplanned night, ready to vote on. **Surprise me** on the Meals page picks one at random.

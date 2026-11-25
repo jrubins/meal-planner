@@ -24,5 +24,12 @@ api_url = "https://meal-planner-api-phi.vercel.app"
 # Vercel team "Jon Rubins' projects" (personal), not the work team:
 vercel_team_id = "team_VmOKVE4X5FKT5sJdDW2iuEvL"
 
+# Reading recipe photos (TanStack AI). To switch provider: change ai_provider (and set
+# ai_model; required for openai and gemini), put that provider's key in the AI_API_KEY
+# Actions secret, and bump ai_api_key_version.
+ai_provider        = "gemini"
+ai_model           = "gemini-3.8-flash"
+ai_api_key_version = 1
+
 # Once you've both signed in, add both WorkOS user IDs to lock the app to the two of you:
 allowed_user_ids = []

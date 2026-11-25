@@ -3,6 +3,7 @@ import { createDb } from '@app/db';
 import { pino } from 'pino';
 import { createApp } from '../src/app.ts';
 import type { WorkosSessions } from '../src/auth/workos-sessions.ts';
+import type { RecipeReader } from '../src/features/meals/recipe-reader.ts';
 import { signTestToken } from '../src/auth/tokens.ts';
 import { loadConfig } from '../src/config.ts';
 
@@ -12,12 +13,13 @@ export const TEST_SECRET =
 
 /**
  * Builds a real app wired to the test database, with logging silenced and test tokens
- * accepted. Pass env overrides to test configuration-dependent behaviour, and a fake WorkOS
- * to test web sign-in without calling WorkOS.
+ * accepted. Pass env overrides to test configuration-dependent behaviour, a fake WorkOS to
+ * test web sign-in without calling WorkOS, and a fake recipe reader to test recipe photos
+ * without calling Claude (without one, recipe photos aren't read).
  */
 export function createTestApp(
   overrides: Record<string, string> = {},
-  deps: { workos?: WorkosSessions } = {},
+  deps: { workos?: WorkosSessions; recipeReader?: RecipeReader } = {},
 ) {
   const config = loadConfig({
     ...process.env,
@@ -33,10 +35,17 @@ export function createTestApp(
     ALLOWED_USER_IDS: '',
     MCP_RESOURCE_URL: 'http://localhost:3000/mcp',
     AUTH_TEST_SECRET: TEST_SECRET,
+    AI_API_KEY: '',
     ...overrides,
   });
   const db = createDb(config.DATABASE_URL, { max: 2 });
-  const app = createApp({ config, db, logger: pino({ level: 'silent' }), ...deps });
+  const app = createApp({
+    config,
+    db,
+    logger: pino({ level: 'silent' }),
+    ...deps,
+    recipeReader: deps.recipeReader ?? null,
+  });
   return { app, db, config };
 }
 

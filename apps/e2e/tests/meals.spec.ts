@@ -21,7 +21,7 @@ test.describe('meals', () => {
     await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
     await expect(page.getByRole('list', { name: 'Tags' })).toHaveText(/thai\s*quick/);
 
-    await page.getByLabel('Upload photos').setInputFiles({
+    await page.getByLabel('Upload photos of the dish').setInputFiles({
       name: 'dinner.png',
       mimeType: 'image/png',
       buffer: PNG,
@@ -38,6 +38,33 @@ test.describe('meals', () => {
     await page.getByRole('dialog').getByRole('button', { name: 'Delete meal' }).click();
     await expect(page).toHaveURL(/\/meals$/);
     await expect(page.getByText(name)).toHaveCount(0);
+  });
+
+  test('adds a recipe photo and types the recipe in', async ({ page, api, capture }) => {
+    const meal = await createMeal(api, unique('Tikka masala'));
+    await page.goto(`/meals/${meal.id}`);
+    const recipe = page.getByRole('region', { name: 'Recipe' });
+
+    await recipe.getByLabel('Upload recipe photos').setInputFiles({
+      name: 'recipe.png',
+      mimeType: 'image/png',
+      buffer: PNG,
+    });
+
+    // The test API has no Anthropic key, so the photo is kept but not read.
+    await expect(recipe.getByText('Recipe reading isn’t set up')).toBeVisible();
+    // A recipe photo never becomes the dish's cover photo.
+    await expect(page.getByRole('button', { name: 'Add a photo of the dish' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page
+      .getByRole('dialog')
+      .getByLabel('Recipe', { exact: true })
+      .fill('Ingredients:\n- chicken\nSteps:\n1. Marinate overnight.');
+    await page.getByRole('button', { name: 'Save' }).click();
+
+    await expect(recipe.getByText('1. Marinate overnight.')).toBeVisible();
+    await capture('meal-recipe');
   });
 
   test('searches and filters the library', async ({ page, api, capture }) => {

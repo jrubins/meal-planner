@@ -20,6 +20,7 @@ const MealFormSchema = z.object({
   name: field('name'),
   description: field('description'),
   recipeUrl: field('recipeUrl'),
+  recipeText: field('recipeText'),
   tags: z.string().max(400),
 });
 
@@ -44,6 +45,7 @@ export function MealForm({ meal, submitLabel = 'Save', onSubmit, onCancel }: Mea
       name: meal?.name ?? '',
       description: meal?.description ?? '',
       recipeUrl: meal?.recipeUrl ?? '',
+      recipeText: meal?.recipeText ?? '',
       tags: meal?.tags.join(', ') ?? '',
     },
     validators: { onSubmit: MealFormSchema },
@@ -104,6 +106,22 @@ export function MealForm({ meal, submitLabel = 'Save', onSubmit, onCancel }: Mea
               name="description"
               rows={4}
               placeholder="Ingredients, sides, how we like it…"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(event) => field.handleChange(event.target.value)}
+            />
+          </div>
+        )}
+      </form.Field>
+      <form.Field name="recipeText">
+        {(field) => (
+          <div className="space-y-1.5">
+            <Label htmlFor="meal-recipe-text">Recipe</Label>
+            <Textarea
+              id="meal-recipe-text"
+              name="recipeText"
+              rows={8}
+              placeholder="Ingredients and steps. Or add a photo of the recipe and it's typed up for you."
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={(event) => field.handleChange(event.target.value)}

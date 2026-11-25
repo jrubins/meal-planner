@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AI_PROVIDERS, resolveModel } from './features/meals/recipe-reader.ts';
 
 const emptyToUndefined = (value: unknown) => (value === '' ? undefined : value);
 
@@ -54,6 +55,14 @@ const EnvSchema = z
      */
     AUTH_TEST_SECRET: z.preprocess(emptyToUndefined, z.string().min(32).optional()),
 
+    // --- AI (reading recipe photos, through TanStack AI) ----------------------------------
+    /** Which provider reads recipe photos: anthropic (default), openai or gemini. */
+    AI_PROVIDER: z.preprocess(emptyToUndefined, z.enum(AI_PROVIDERS).default('anthropic')),
+    /** The provider's model. Optional for anthropic (claude-opus-5-5); required for the others. */
+    AI_MODEL: z.preprocess(emptyToUndefined, z.string().optional()),
+    /** The provider's API key. Optional: without it, recipe photos are kept but not read. */
+    AI_API_KEY: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+
     // --- Monitoring ------------------------------------------------------------------------
     SENTRY_DSN: z.preprocess(emptyToUndefined, z.url().optional()),
     SENTRY_ENVIRONMENT: z.preprocess(emptyToUndefined, z.string().optional()),
@@ -65,6 +74,13 @@ const EnvSchema = z
     VERCEL_GIT_COMMIT_SHA: z.preprocess(emptyToUndefined, z.string().optional()),
   })
   .superRefine((env, ctx) => {
+    if (env.AI_API_KEY) {
+      try {
+        resolveModel(env.AI_PROVIDER, env.AI_MODEL);
+      } catch (error) {
+        ctx.addIssue({ code: 'custom', path: ['AI_MODEL'], message: (error as Error).message });
+      }
+    }
     const deployed = env.NODE_ENV === 'production' || env.VERCEL !== undefined;
     if (!deployed) return;
     if (env.AUTH_TEST_SECRET) {
