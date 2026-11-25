@@ -31,7 +31,18 @@ const everywhere: ImportRestriction[] = [
 const nodeOnly: ImportRestriction[] = [
   ...everywhere,
   {
-    group: ['react', 'react-dom', '@tanstack/*', '@app/web'],
+    group: [
+      'react',
+      'react-dom',
+      '@tanstack/*',
+      // TanStack AI's core and provider adapters are server packages (the API reads recipe
+      // photos with them); its client and framework packages stay browser-only.
+      '!@tanstack/ai',
+      '!@tanstack/ai-anthropic',
+      '!@tanstack/ai-openai',
+      '!@tanstack/ai-gemini',
+      '@app/web',
+    ],
     message: 'Browser libraries and web code do not belong in Node code.',
   },
 ];

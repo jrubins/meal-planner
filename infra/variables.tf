@@ -154,21 +154,38 @@ variable "workos_api_key_version" {
   default     = 1
 }
 
-variable "anthropic_api_key" {
-  description = "Anthropic API key: Claude reads recipe photos into text. From the ANTHROPIC_API_KEY Actions secret; never stored in state."
+variable "ai_provider" {
+  description = "AI provider that reads recipe photos (TanStack AI adapter): anthropic, openai or gemini."
+  type        = string
+  default     = "anthropic"
+
+  validation {
+    condition     = contains(["anthropic", "openai", "gemini"], var.ai_provider)
+    error_message = "ai_provider must be anthropic, openai or gemini."
+  }
+}
+
+variable "ai_model" {
+  description = "The provider's model. Null: the default (claude-opus-5-5 for anthropic); required for openai and gemini."
+  type        = string
+  default     = null
+}
+
+variable "ai_api_key" {
+  description = "API key of the AI provider. From the AI_API_KEY Actions secret; never stored in state."
   type        = string
   default     = null
   sensitive   = true
   ephemeral   = true
 
   validation {
-    condition     = var.anthropic_api_key_version == 0 || startswith(coalesce(var.anthropic_api_key, "missing"), "sk-ant-")
-    error_message = "anthropic_api_key_version is set: add the ANTHROPIC_API_KEY Actions secret (sk-ant-...), or set the version to 0."
+    condition     = var.ai_api_key_version == 0 || coalesce(var.ai_api_key, "") != ""
+    error_message = "ai_api_key_version is set: add the AI_API_KEY Actions secret (the provider's API key), or set the version to 0."
   }
 }
 
-variable "anthropic_api_key_version" {
-  description = "0: recipe photos aren't read. Set to 1 (and bump on rotation) to send anthropic_api_key to Vercel."
+variable "ai_api_key_version" {
+  description = "0: recipe photos aren't read. Set to 1 (and bump on rotation or provider change) to send ai_api_key to Vercel."
   type        = number
   default     = 0
 }

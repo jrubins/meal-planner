@@ -23,7 +23,7 @@ import type { RecipeReader } from './recipe-reader.ts';
 
 /** How recipe photos are read into text. */
 export interface RecipeReading {
-  /** Null when recipe reading isn't configured (no ANTHROPIC_API_KEY): photos are kept unread. */
+  /** Null when recipe reading isn't configured (no AI_API_KEY): photos are kept unread. */
   reader: RecipeReader | null;
   /** Runs work after the response is sent (Vercel's waitUntil in production). */
   background: (task: Promise<void>) => void;

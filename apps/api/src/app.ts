@@ -20,7 +20,7 @@ import { createHouseholdService } from './features/household/household.service.t
 import { mealsRouter } from './features/meals/meals.routes.ts';
 import { createMealsService } from './features/meals/meals.service.ts';
 import { createPostgresPhotoStore } from './features/meals/photo-store.ts';
-import { createClaudeRecipeReader, type RecipeReader } from './features/meals/recipe-reader.ts';
+import { createRecipeReader, type RecipeReader } from './features/meals/recipe-reader.ts';
 import { mcpHandlers, mcpMetadataRouter } from './features/mcp/mcp.routes.ts';
 import { planRouter } from './features/plan/plan.routes.ts';
 import { createPlanService } from './features/plan/plan.service.ts';
@@ -34,7 +34,7 @@ export interface AppDeps {
   verifier?: TokenVerifier;
   /** WorkOS web sign-in. Defaults to one built from config (when configured); tests pass a fake. */
   workos?: WorkosSessions;
-  /** Reads recipe photos. Defaults to Claude when ANTHROPIC_API_KEY is set; tests pass a fake. */
+  /** Reads recipe photos. Defaults to the configured AI provider (AI_API_KEY); tests pass a fake. */
   recipeReader?: RecipeReader | null;
 }
 
@@ -87,8 +87,12 @@ export function createApp({
     reader:
       recipeReader !== undefined
         ? recipeReader
-        : config.ANTHROPIC_API_KEY
-          ? createClaudeRecipeReader(config.ANTHROPIC_API_KEY)
+        : config.AI_API_KEY
+          ? createRecipeReader({
+              provider: config.AI_PROVIDER,
+              model: config.AI_MODEL,
+              apiKey: config.AI_API_KEY,
+            })
           : null,
     // On Vercel, keep the function alive until the reading finishes; locally it just runs.
     background: (task) => (config.VERCEL ? waitUntil(task) : void task),

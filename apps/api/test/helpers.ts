@@ -35,7 +35,7 @@ export function createTestApp(
     ALLOWED_USER_IDS: '',
     MCP_RESOURCE_URL: 'http://localhost:3000/mcp',
     AUTH_TEST_SECRET: TEST_SECRET,
-    ANTHROPIC_API_KEY: '',
+    AI_API_KEY: '',
     ...overrides,
   });
   const db = createDb(config.DATABASE_URL, { max: 2 });
