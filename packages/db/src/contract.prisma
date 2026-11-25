@@ -41,6 +41,8 @@ model Meal {
   name            String
   description     String?
   recipeUrl       String?
+  // The recipe as text: read from recipe photos by Claude, or typed in. Editable.
+  recipeText      String?
   tags            String[]
   createdByUserId String
   createdAt       DateTime           @default(now()) @onCreate(now())
@@ -57,6 +59,10 @@ model MealPhoto {
   mealId      Int
   meal        Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
   householdId Int
+  // "meal" (a photo of the dish) or "recipe" (a photo of the recipe, read into text).
+  kind        String   @default("meal")
+  // Recipe photos only: "reading", "done", "not_a_recipe", "failed" or "unavailable".
+  readStatus  String?
   contentType String
   data        Bytes
   createdAt   DateTime @default(now()) @onCreate(now())

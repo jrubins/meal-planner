@@ -46,6 +46,10 @@ Links below are filled in for `jrubins/meal-planner` (project name `meal-planner
 - [x] **First apply**: [Actions → Infrastructure](https://github.com/jrubins/meal-planner/actions/workflows/infra.yml)
       → **Run workflow** on `main`. Then redeploy both Vercel projects once.
 - [x] **WorkOS production settings** (section 3).
+- [ ] **Recipe reading**: create an Anthropic API key and save it as the `ANTHROPIC_API_KEY`
+      repository secret (section 2). Without it, recipe photos are kept but not read into
+      text. To turn reading off, set `anthropic_api_key_version = 0` in
+      `infra/terraform.tfvars`.
 - [ ] **Claude connector**: in [claude.ai Settings → Connectors](https://claude.ai/settings/connectors),
       add a custom connector with the MCP URL (section 4). Sign in once. Each partner does this
       in their own Claude account.
@@ -70,6 +74,7 @@ Terraform generates it and writes it straight to Vercel (bump `cookie_password_v
 | `NEON_API_KEY`            | Neon API key                                                             | [Neon → Account settings → API keys](https://console.neon.tech/app/settings/api-keys)           | Personal key (the whole account)                                                                           |         | 2026-11-24 |
 | `SENTRY_AUTH_TOKEN`       | Sentry personal token for Terraform                                      | [Sentry → User settings → Personal Tokens](https://sentry.io/settings/account/api/auth-tokens/) | `org:read`, `project:admin`, `team:admin`                                                                  |         | 2026-11-24 |
 | `INFRA_GITHUB_TOKEN`      | Fine-grained personal access token                                       | [GitHub → Fine-grained tokens → New](https://github.com/settings/personal-access-tokens/new)    | Only `jrubins/meal-planner`; Administration: RW                                                            |         | 2026-11-24 |
+| `ANTHROPIC_API_KEY`       | Anthropic API key: Claude reads recipe photos into text                  | [Claude Console → API keys](https://platform.claude.com/settings/keys)                          | A key in the workspace you want billed; set a spend limit there if you like                                |         |            |
 | `WORKOS_API_KEY`          | WorkOS API key: the API signs browsers in with it (server-side sessions) | [WorkOS → API Keys](https://dashboard.workos.com/api-keys)                                      | The same WorkOS environment as your client ID (Staging or Production)                                      |         | 2026-11-24 |
 | `SENTRY_SOURCEMAPS_TOKEN` | Optional: Sentry organization token (uploads)                            | [Sentry → Settings → Auth Tokens](https://sentry.io/settings/auth-tokens/)                      | Created with the default organization token scopes                                                         |         |            |
 

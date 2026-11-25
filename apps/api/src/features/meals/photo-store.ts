@@ -1,9 +1,11 @@
 import type { Db } from '@app/db';
-import type { PhotoContentType } from '@app/shared';
+import type { PhotoContentType, PhotoKind, RecipeReadStatus } from '@app/shared';
 
 export interface StoredPhoto {
   id: number;
   mealId: number;
+  kind: string;
+  readStatus: string | null;
   createdAt: Date;
 }
 
@@ -22,6 +24,8 @@ export interface PhotoStore {
   save(input: {
     householdId: number;
     mealId: number;
+    kind: PhotoKind;
+    readStatus: RecipeReadStatus | null;
     contentType: PhotoContentType;
     data: Uint8Array;
   }): Promise<StoredPhoto>;
@@ -30,27 +34,30 @@ export interface PhotoStore {
   read(householdId: number, mealId: number, photoId: number): Promise<PhotoContent | null>;
   /** True when a photo was removed. */
   remove(householdId: number, mealId: number, photoId: number): Promise<boolean>;
+  /** Records how reading a recipe photo went. */
+  setReadStatus(photoId: number, status: RecipeReadStatus): Promise<void>;
 }
 
 /** Stores photos in Postgres (a `bytea` column): simple, and plenty for a household. */
 export function createPostgresPhotoStore(db: Db): PhotoStore {
   const Photos = db.orm.public.MealPhoto;
   return {
-    async save({ householdId, mealId, contentType, data }) {
-      const row = await Photos.select('id', 'mealId', 'createdAt').create({
+    async save({ householdId, mealId, kind, readStatus, contentType, data }) {
+      return Photos.select('id', 'mealId', 'kind', 'readStatus', 'createdAt').create({
         householdId,
         mealId,
+        kind,
+        readStatus,
         contentType,
         data,
       });
-      return row;
     },
 
     async list(householdId, mealIds) {
       if (mealIds.length === 0) return [];
       return Photos.where({ householdId })
         .where((p) => p.mealId.in([...mealIds]))
-        .select('id', 'mealId', 'createdAt')
+        .select('id', 'mealId', 'kind', 'readStatus', 'createdAt')
         .orderBy([(p) => p.createdAt.asc(), (p) => p.id.asc()])
         .limit(2000)
         .all();
@@ -67,6 +74,10 @@ export function createPostgresPhotoStore(db: Db): PhotoStore {
         .select('id')
         .delete();
       return deleted !== null;
+    },
+
+    async setReadStatus(photoId, status) {
+      await Photos.where({ id: photoId }).select('id').update({ readStatus: status });
     },
   };
 }

@@ -154,6 +154,25 @@ variable "workos_api_key_version" {
   default     = 1
 }
 
+variable "anthropic_api_key" {
+  description = "Anthropic API key: Claude reads recipe photos into text. From the ANTHROPIC_API_KEY Actions secret; never stored in state."
+  type        = string
+  default     = null
+  sensitive   = true
+  ephemeral   = true
+
+  validation {
+    condition     = var.anthropic_api_key_version == 0 || startswith(coalesce(var.anthropic_api_key, "missing"), "sk-ant-")
+    error_message = "anthropic_api_key_version is set: add the ANTHROPIC_API_KEY Actions secret (sk-ant-...), or set the version to 0."
+  }
+}
+
+variable "anthropic_api_key_version" {
+  description = "0: recipe photos aren't read. Set to 1 (and bump on rotation) to send anthropic_api_key to Vercel."
+  type        = number
+  default     = 0
+}
+
 variable "cookie_password_version" {
   description = "Bump to generate a new session cookie password. Signs everyone out."
   type        = number

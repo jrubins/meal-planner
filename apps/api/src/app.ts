@@ -20,6 +20,7 @@ import { createHouseholdService } from './features/household/household.service.t
 import { mealsRouter } from './features/meals/meals.routes.ts';
 import { createMealsService } from './features/meals/meals.service.ts';
 import { createPostgresPhotoStore } from './features/meals/photo-store.ts';
+import { createClaudeRecipeReader, type RecipeReader } from './features/meals/recipe-reader.ts';
 import { mcpHandlers, mcpMetadataRouter } from './features/mcp/mcp.routes.ts';
 import { planRouter } from './features/plan/plan.routes.ts';
 import { createPlanService } from './features/plan/plan.service.ts';
@@ -33,6 +34,8 @@ export interface AppDeps {
   verifier?: TokenVerifier;
   /** WorkOS web sign-in. Defaults to one built from config (when configured); tests pass a fake. */
   workos?: WorkosSessions;
+  /** Reads recipe photos. Defaults to Claude when ANTHROPIC_API_KEY is set; tests pass a fake. */
+  recipeReader?: RecipeReader | null;
 }
 
 /**
@@ -48,6 +51,7 @@ export function createApp({
   logger,
   verifier: injected,
   workos: injectedWorkos,
+  recipeReader,
 }: AppDeps): Express {
   const app = express();
   const verifier =
@@ -79,7 +83,20 @@ export function createApp({
   const trustedOrigins = [...new Set([new URL(config.WEB_URL).origin, ...config.CORS_ORIGINS])];
   const households = createHouseholdService(db);
   // Photos live in Postgres; swap in another PhotoStore to move them to blob storage.
-  const meals = createMealsService(db, households, createPostgresPhotoStore(db));
+  const meals = createMealsService(db, households, createPostgresPhotoStore(db), {
+    reader:
+      recipeReader !== undefined
+        ? recipeReader
+        : config.ANTHROPIC_API_KEY
+          ? createClaudeRecipeReader(config.ANTHROPIC_API_KEY)
+          : null,
+    // On Vercel, keep the function alive until the reading finishes; locally it just runs.
+    background: (task) => (config.VERCEL ? waitUntil(task) : void task),
+    onError: (error, context) => {
+      logger.error({ err: error, ...context }, 'reading a recipe photo failed');
+      Sentry.captureException(error, { extra: context });
+    },
+  });
   const services = { households, meals, plan: createPlanService(db, households, meals) };
 
   app.disable('x-powered-by');

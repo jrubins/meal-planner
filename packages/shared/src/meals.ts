@@ -8,8 +8,29 @@ export type PhotoContentType = z.infer<typeof PhotoContentTypeSchema>;
 /** Largest photo upload, in bytes. Under Vercel Functions' 4.5 MB request limit. */
 export const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
 
+/** "meal": a photo of the dish. "recipe": a photo of the recipe, which Claude reads into text. */
+export const PhotoKindSchema = z.enum(['meal', 'recipe']);
+export type PhotoKind = z.infer<typeof PhotoKindSchema>;
+
+/**
+ * Reading a recipe photo into text, which runs in the background after upload:
+ * "reading" until it finishes; "done" (text added to the meal's recipe), "not_a_recipe",
+ * "failed" (can be retried) or "unavailable" (recipe reading isn't set up on this server).
+ */
+export const RecipeReadStatusSchema = z.enum([
+  'reading',
+  'done',
+  'not_a_recipe',
+  'failed',
+  'unavailable',
+]);
+export type RecipeReadStatus = z.infer<typeof RecipeReadStatusSchema>;
+
 export const MealPhotoSchema = z.object({
   id: z.number().int(),
+  kind: PhotoKindSchema,
+  /** Recipe photos only; null for meal photos. */
+  readStatus: RecipeReadStatusSchema.nullable(),
   /** API path that serves the image, e.g. /meals/3/photos/7. */
   path: z.string(),
   createdAt: z.iso.datetime(),
@@ -21,7 +42,7 @@ export const MealSummarySchema = z.object({
   id: z.number().int(),
   name: z.string(),
   tags: z.string().array(),
-  /** API path of the first photo, or null. */
+  /** API path of the first photo of the dish (recipe photos are never the cover), or null. */
   coverPhotoPath: z.string().nullable(),
 });
 export type MealSummary = z.infer<typeof MealSummarySchema>;
@@ -29,6 +50,9 @@ export type MealSummary = z.infer<typeof MealSummarySchema>;
 export const MealSchema = MealSummarySchema.extend({
   description: z.string().nullable(),
   recipeUrl: z.string().nullable(),
+  /** The recipe as text: read from recipe photos, or typed in. */
+  recipeText: z.string().nullable(),
+  /** Photos of the dish and of the recipe, oldest first. */
   photos: MealPhotoSchema.array(),
   /** The most recent night (up to today) this meal was the dinner, or null. */
   lastEatenOn: CalendarDateSchema.nullable(),
@@ -61,6 +85,9 @@ export const CreateMealSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
   description: optionalText(2000).optional().describe('Notes: ingredients, how to make it, sides'),
   recipeUrl: recipeUrl.optional().describe('Link to the recipe'),
+  recipeText: optionalText(20000)
+    .optional()
+    .describe('The full recipe as text: ingredients and steps'),
   tags: tags.optional(),
 });
 export type CreateMeal = z.infer<typeof CreateMealSchema>;
@@ -76,6 +103,11 @@ export const MealIdParamsSchema = z.object({
 export const MealPhotoParamsSchema = z.object({
   id: z.coerce.number().int().positive(),
   photoId: z.coerce.number().int().positive(),
+});
+
+/** POST /meals/:id/photos?kind=recipe: which kind of photo the upload is (default "meal"). */
+export const UploadPhotoQuerySchema = z.object({
+  kind: PhotoKindSchema.default('meal'),
 });
 
 export const ListMealsQuerySchema = z.object({

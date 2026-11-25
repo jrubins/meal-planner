@@ -24,5 +24,9 @@ api_url = "https://meal-planner-api-phi.vercel.app"
 # Vercel team "Jon Rubins' projects" (personal), not the work team:
 vercel_team_id = "team_VmOKVE4X5FKT5sJdDW2iuEvL"
 
+# Claude reads recipe photos into text with the ANTHROPIC_API_KEY Actions secret.
+# Bump to send a rotated key to Vercel.
+anthropic_api_key_version = 1
+
 # Once you've both signed in, add both WorkOS user IDs to lock the app to the two of you:
 allowed_user_ids = []

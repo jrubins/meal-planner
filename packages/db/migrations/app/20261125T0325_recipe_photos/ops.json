@@ -1,0 +1,192 @@
+[
+  {
+    "id": "column.public.Meal.recipeText",
+    "label": "Add column \"recipeText\" to \"Meal\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "recipeText",
+        "table": "Meal"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"recipeText\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Meal",
+          "recipeText"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"recipeText\" on \"Meal\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"recipeText\"",
+        "sql": "ALTER TABLE \"public\".\"Meal\" ADD COLUMN \"recipeText\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"recipeText\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Meal",
+          "recipeText"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"recipeText\" on \"Meal\""
+        }
+      },
+      {
+        "description": "verify column \"recipeText\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "Meal",
+          "recipeText",
+          "text"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.MealPhoto.kind",
+    "label": "Add column \"kind\" to \"MealPhoto\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "kind",
+        "table": "MealPhoto"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"kind\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MealPhoto",
+          "kind"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"kind\" on \"MealPhoto\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"kind\"",
+        "sql": "ALTER TABLE \"public\".\"MealPhoto\" ADD COLUMN \"kind\" text DEFAULT 'meal' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"kind\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MealPhoto",
+          "kind"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"kind\" on \"MealPhoto\""
+        }
+      },
+      {
+        "description": "verify column \"kind\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "MealPhoto",
+          "kind",
+          "text"
+        ]
+      },
+      {
+        "description": "verify column \"kind\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "MealPhoto",
+          "kind",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.MealPhoto.readStatus",
+    "label": "Add column \"readStatus\" to \"MealPhoto\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "readStatus",
+        "table": "MealPhoto"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"readStatus\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MealPhoto",
+          "readStatus"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"readStatus\" on \"MealPhoto\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"readStatus\"",
+        "sql": "ALTER TABLE \"public\".\"MealPhoto\" ADD COLUMN \"readStatus\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"readStatus\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MealPhoto",
+          "readStatus"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"readStatus\" on \"MealPhoto\""
+        }
+      },
+      {
+        "description": "verify column \"readStatus\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "MealPhoto",
+          "readStatus",
+          "text"
+        ]
+      }
+    ]
+  }
+]

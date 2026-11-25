@@ -8,6 +8,7 @@ import {
   PhotoContentTypeSchema,
   SuggestMealsQuerySchema,
   UpdateMealSchema,
+  UploadPhotoQuerySchema,
 } from '@app/shared';
 import { currentUserId } from '../../auth/middleware.ts';
 import { HttpError } from '../../lib/http-error.ts';
@@ -52,18 +53,20 @@ export function mealsRouter(meals: MealsService, plan: PlanService): Router {
   });
 
   // Photos are uploaded as the raw image body, with its type as the Content-Type.
+  // ?kind=recipe marks a photo of the recipe, which is then read into the meal's recipe text.
   router.post(
     '/:id/photos',
     express.raw({ type: () => true, limit: MAX_PHOTO_BYTES }),
     async (req, res) => {
       const { id } = validate(MealIdParamsSchema, req.params);
+      const { kind } = validate(UploadPhotoQuerySchema, req.query);
       const type = PhotoContentTypeSchema.safeParse(req.headers['content-type']?.split(';')[0]);
       if (!type.success) {
         throw new HttpError(415, 'unsupported_media_type', 'Upload a JPEG, PNG or WebP image');
       }
       const body: unknown = req.body;
       const data = Buffer.isBuffer(body) ? new Uint8Array(body) : new Uint8Array();
-      res.status(201).json(await meals.addPhoto(currentUserId(req), id, type.data, data));
+      res.status(201).json(await meals.addPhoto(currentUserId(req), id, kind, type.data, data));
     },
   );
 
@@ -75,6 +78,11 @@ export function mealsRouter(meals: MealsService, plan: PlanService): Router {
       .set('Cache-Control', 'private, max-age=31536000, immutable')
       .type(photo.contentType)
       .send(Buffer.from(photo.data));
+  });
+
+  router.post('/:id/photos/:photoId/read', async (req, res) => {
+    const { id, photoId } = validate(MealPhotoParamsSchema, req.params);
+    res.json(await meals.rereadRecipePhoto(currentUserId(req), id, photoId));
   });
 
   router.delete('/:id/photos/:photoId', async (req, res) => {

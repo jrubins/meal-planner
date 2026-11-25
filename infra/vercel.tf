@@ -104,6 +104,18 @@ resource "vercel_project_environment_variable" "workos_api_key" {
   sensitive        = true
 }
 
+resource "vercel_project_environment_variable" "anthropic_api_key" {
+  count = var.anthropic_api_key_version > 0 ? 1 : 0
+
+  project_id       = vercel_project.api.id
+  key              = "ANTHROPIC_API_KEY"
+  comment          = "Anthropic API key for reading recipe photos (managed by Terraform)"
+  value_wo         = var.anthropic_api_key
+  value_wo_version = var.anthropic_api_key_version
+  target           = local.production
+  sensitive        = true
+}
+
 # Encrypts the session cookie. Generated here and written straight to Vercel: it exists nowhere
 # else, and a new one is sent only when cookie_password_version is bumped.
 ephemeral "random_password" "cookie" {

@@ -164,7 +164,7 @@ export function MealsPage() {
       )}
 
       <Dialog open={creating} onOpenChange={setCreating}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-md">
           <DialogHeader>
             <DialogTitle>New meal</DialogTitle>
             <DialogDescription>You can add photos once it’s saved.</DialogDescription>

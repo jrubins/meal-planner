@@ -17,6 +17,7 @@ export function sampleMeal(id: number, name: string, overrides: Partial<Meal> = 
     coverPhotoPath: null,
     description: null,
     recipeUrl: null,
+    recipeText: null,
     photos: [],
     lastEatenOn: null,
     timesEaten: 0,

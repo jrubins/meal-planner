@@ -2,24 +2,41 @@ import * as Sentry from '@sentry/node';
 import type { Db } from '@app/db';
 import {
   daysBetween,
+  PhotoContentTypeSchema,
+  PhotoKindSchema,
+  RecipeReadStatusSchema,
   type CreateMeal,
   type ListMealsQuery,
   type Meal,
   type MealPhoto,
   type MealSummary,
   type PhotoContentType,
+  type PhotoKind,
+  type RecipeReadStatus,
   type Suggestion,
   type UpdateMeal,
 } from '@app/shared';
 import { HttpError, notFound } from '../../lib/http-error.ts';
 import type { HouseholdService } from '../household/household.service.ts';
 import type { PhotoContent, PhotoStore, StoredPhoto } from './photo-store.ts';
+import type { RecipeReader } from './recipe-reader.ts';
+
+/** How recipe photos are read into text. */
+export interface RecipeReading {
+  /** Null when recipe reading isn't configured (no ANTHROPIC_API_KEY): photos are kept unread. */
+  reader: RecipeReader | null;
+  /** Runs work after the response is sent (Vercel's waitUntil in production). */
+  background: (task: Promise<void>) => void;
+  /** Reports a failed reading (logged and sent to Sentry by the caller). */
+  onError: (error: unknown, context: { mealId: number; photoId: number }) => void;
+}
 
 type MealRow = {
   id: number;
   name: string;
   description: string | null;
   recipeUrl: string | null;
+  recipeText: string | null;
   tags: readonly string[];
   createdAt: Date;
 };
@@ -27,6 +44,18 @@ type MealRow = {
 type History = { lastEatenOn: string | null; timesEaten: number };
 
 const photoPath = (photo: StoredPhoto) => `/meals/${photo.mealId}/photos/${photo.id}`;
+
+const toMealPhoto = (photo: StoredPhoto): MealPhoto => ({
+  id: photo.id,
+  kind: PhotoKindSchema.catch('meal').parse(photo.kind),
+  readStatus: RecipeReadStatusSchema.nullable().catch(null).parse(photo.readStatus),
+  path: photoPath(photo),
+  createdAt: photo.createdAt.toISOString(),
+});
+
+/** The recipe text with one more photo's reading added after it. */
+const appendRecipe = (current: string | null, text: string) =>
+  current?.trim() ? `${current.trimEnd()}\n\n${text}` : text;
 
 /** The first bytes of each accepted image type, so an upload is what it claims to be. */
 function looksLike(contentType: PhotoContentType, data: Uint8Array): boolean {
@@ -66,8 +95,68 @@ function suggestionWeight(history: History, today: string): number {
  * The household's meal library: meals, their photos, their history, and suggestions.
  * Every method takes the acting user's ID and only touches their household's meals.
  */
-export function createMealsService(db: Db, households: HouseholdService, photos: PhotoStore) {
+export function createMealsService(
+  db: Db,
+  households: HouseholdService,
+  photos: PhotoStore,
+  recipes: RecipeReading,
+) {
   const Meals = db.orm.public.Meal;
+
+  /**
+   * Adds text to a meal's recipe. Several recipe photos can finish reading at once, so the
+   * write only applies if the text is still what was read, and retries otherwise: no reading
+   * overwrites another.
+   */
+  async function addRecipeText(mealId: number, text: string): Promise<void> {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const meal = await Meals.where({ id: mealId }).select('recipeText').first();
+      if (!meal) return; // The meal was deleted while its photo was being read.
+      const current = meal.recipeText;
+      const updated = await Meals.where({ id: mealId })
+        .where((m) => (current === null ? m.recipeText.isNull() : m.recipeText.eq(current)))
+        .updateAndCount({ recipeText: appendRecipe(current, text) });
+      if (updated > 0) return;
+    }
+    throw new Error(`Recipe text for meal ${mealId} kept changing; reading not saved`);
+  }
+
+  /** Reads one recipe photo into the meal's recipe text, recording how it went. */
+  async function readRecipe(
+    reader: RecipeReader,
+    mealId: number,
+    photoId: number,
+    image: { contentType: PhotoContentType; data: Uint8Array },
+  ): Promise<void> {
+    let status: RecipeReadStatus;
+    try {
+      const reading = await reader.read(image);
+      if (reading.isRecipe) {
+        await addRecipeText(mealId, reading.text);
+        status = 'done';
+      } else {
+        status = 'not_a_recipe';
+      }
+    } catch (error) {
+      recipes.onError(error, { mealId, photoId });
+      status = 'failed';
+    }
+    Sentry.metrics.count(`meals.recipe_read.${status}`, 1);
+    await photos.setReadStatus(photoId, status).catch((error: unknown) => {
+      recipes.onError(error, { mealId, photoId });
+    });
+  }
+
+  /** Starts reading a recipe photo after the response; "reading" until it finishes. */
+  function startReading(
+    mealId: number,
+    photoId: number,
+    image: { contentType: PhotoContentType; data: Uint8Array },
+  ): RecipeReadStatus {
+    if (!recipes.reader) return 'unavailable';
+    recipes.background(readRecipe(recipes.reader, mealId, photoId, image));
+    return 'reading';
+  }
 
   async function rows(householdId: number): Promise<MealRow[]> {
     return Meals.where({ householdId })
@@ -105,7 +194,7 @@ export function createMealsService(db: Db, households: HouseholdService, photos:
     const byMeal = new Map<number, MealPhoto[]>();
     for (const photo of await photos.list(householdId, mealIds)) {
       const list = byMeal.get(photo.mealId) ?? [];
-      list.push({ id: photo.id, path: photoPath(photo), createdAt: photo.createdAt.toISOString() });
+      list.push(toMealPhoto(photo));
       byMeal.set(photo.mealId, list);
     }
     return byMeal;
@@ -116,7 +205,7 @@ export function createMealsService(db: Db, households: HouseholdService, photos:
       id: meal.id,
       name: meal.name,
       tags: [...meal.tags],
-      coverPhotoPath: mealPhotos?.[0]?.path ?? null,
+      coverPhotoPath: mealPhotos?.find((photo) => photo.kind === 'meal')?.path ?? null,
     };
   }
 
@@ -125,6 +214,7 @@ export function createMealsService(db: Db, households: HouseholdService, photos:
       ...toSummary(meal, mealPhotos),
       description: meal.description,
       recipeUrl: meal.recipeUrl,
+      recipeText: meal.recipeText,
       photos: mealPhotos,
       lastEatenOn: history?.lastEatenOn ?? null,
       timesEaten: history?.timesEaten ?? 0,
@@ -147,7 +237,7 @@ export function createMealsService(db: Db, households: HouseholdService, photos:
     if (query.tag && !meal.tags.includes(query.tag)) return false;
     if (!query.q) return true;
     const needle = query.q.toLowerCase();
-    return [meal.name, meal.description ?? '', ...meal.tags].some((text) =>
+    return [meal.name, meal.description ?? '', meal.recipeText ?? '', ...meal.tags].some((text) =>
       text.toLowerCase().includes(needle),
     );
   }
@@ -183,6 +273,7 @@ export function createMealsService(db: Db, households: HouseholdService, photos:
         name: input.name,
         description: input.description ?? null,
         recipeUrl: input.recipeUrl ?? null,
+        recipeText: input.recipeText ?? null,
         tags: input.tags ?? [],
       });
       Sentry.metrics.count('meals.created', 1);
@@ -222,9 +313,14 @@ export function createMealsService(db: Db, households: HouseholdService, photos:
       return new Map(meals.map((m) => [m.id, toSummary(m, byMeal.get(m.id))]));
     },
 
+    /**
+     * Adds a photo of the dish or of its recipe. A recipe photo is then read into the meal's
+     * recipe text in the background: its readStatus is "reading" until that finishes.
+     */
     async addPhoto(
       userId: string,
       mealId: number,
+      kind: PhotoKind,
       contentType: PhotoContentType,
       data: Uint8Array,
     ): Promise<MealPhoto> {
@@ -233,9 +329,38 @@ export function createMealsService(db: Db, households: HouseholdService, photos:
       if (data.length === 0 || !looksLike(contentType, data)) {
         throw new HttpError(400, 'invalid_photo', `The upload is not a valid ${contentType} image`);
       }
-      const photo = await photos.save({ householdId: household.id, mealId, contentType, data });
-      Sentry.metrics.count('meals.photo_added', 1);
-      return { id: photo.id, path: photoPath(photo), createdAt: photo.createdAt.toISOString() };
+      const isRecipe = kind === 'recipe';
+      const saved = await photos.save({
+        householdId: household.id,
+        mealId,
+        kind,
+        // Recorded before reading starts, so the reading's own status update always wins.
+        readStatus: isRecipe ? (recipes.reader ? 'reading' : 'unavailable') : null,
+        contentType,
+        data,
+      });
+      Sentry.metrics.count(`meals.photo_added.${kind}`, 1);
+      if (isRecipe) startReading(mealId, saved.id, { contentType, data });
+      return toMealPhoto(saved);
+    },
+
+    /** Reads a recipe photo again, e.g. after a failed reading. */
+    async rereadRecipePhoto(userId: string, mealId: number, photoId: number): Promise<MealPhoto> {
+      const household = await households.context(userId);
+      const photo = (await photos.list(household.id, [mealId])).find((p) => p.id === photoId);
+      if (!photo) throw notFound(`Photo ${photoId} not found`);
+      const current = toMealPhoto(photo);
+      if (current.kind !== 'recipe') {
+        throw new HttpError(400, 'not_a_recipe_photo', 'Only recipe photos are read into text');
+      }
+      if (current.readStatus === 'reading') return current;
+      const content = await photos.read(household.id, mealId, photoId);
+      const contentType = PhotoContentTypeSchema.safeParse(content?.contentType);
+      if (!content || !contentType.success) throw notFound(`Photo ${photoId} not found`);
+      if (!recipes.reader) return { ...current, readStatus: 'unavailable' };
+      await photos.setReadStatus(photoId, 'reading');
+      startReading(mealId, photoId, { contentType: contentType.data, data: content.data });
+      return { ...current, readStatus: 'reading' };
     },
 
     async photo(userId: string, mealId: number, photoId: number): Promise<PhotoContent> {

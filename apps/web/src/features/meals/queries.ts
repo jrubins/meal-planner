@@ -1,6 +1,7 @@
 import {
   MealPhotoSchema,
   MealSchema,
+  type PhotoKind,
   SuggestionSchema,
   type CreateMeal,
   type UpdateMeal,
@@ -17,6 +18,9 @@ export const mealQueryOptions = (id: number) =>
   queryOptions({
     queryKey: ['meals', id],
     queryFn: () => apiRequest(`/meals/${id}`, MealSchema),
+    // While a recipe photo is being read, check back until its text arrives.
+    refetchInterval: (query) =>
+      query.state.data?.photos.some((photo) => photo.readStatus === 'reading') ? 2000 : false,
   });
 
 /** Random meals for inspiration, skipping ones already in the week of `date`. */
@@ -73,12 +77,22 @@ export function useDeleteMeal() {
 export function useUploadPhoto(mealId: number) {
   const invalidate = useInvalidateMeals();
   return useMutation({
-    mutationFn: (photo: Blob) =>
-      apiRequest(`/meals/${mealId}/photos`, MealPhotoSchema, {
+    mutationFn: ({ photo, kind }: { photo: Blob; kind: PhotoKind }) =>
+      apiRequest(`/meals/${mealId}/photos?kind=${kind}`, MealPhotoSchema, {
         method: 'POST',
         headers: { 'content-type': photo.type },
         body: photo,
       }),
+    onSuccess: invalidate,
+  });
+}
+
+/** Reads a recipe photo again (after a failed reading). */
+export function useRereadPhoto(mealId: number) {
+  const invalidate = useInvalidateMeals();
+  return useMutation({
+    mutationFn: (photoId: number) =>
+      apiRequest(`/meals/${mealId}/photos/${photoId}/read`, MealPhotoSchema, { method: 'POST' }),
     onSuccess: invalidate,
   });
 }

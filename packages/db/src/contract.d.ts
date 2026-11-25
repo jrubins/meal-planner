@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'fe894037f89a81637dba4ffc0c9bff8e147b454c4d8a382e8aff602d5a2f99cb'>;
+  StorageHashBase<'6dec37d2f475b6b9f68163d7d4bb0a8c3c29d7ea8c012859ec2683b36788a54d'>;
 export type ExecutionHash =
   ExecutionHashBase<'167c022c16f97340aaa8aafd1d91434c1f662492b5aabc3baac56449a88f756d'>;
 export type ProfileHash =
@@ -360,6 +360,7 @@ export namespace Models {
     householdId: FieldOutputTypes['public']['Meal']['householdId'];
     id: FieldOutputTypes['public']['Meal']['id'];
     name: FieldOutputTypes['public']['Meal']['name'];
+    recipeText: FieldOutputTypes['public']['Meal']['recipeText'];
     recipeUrl: FieldOutputTypes['public']['Meal']['recipeUrl'];
     tags: FieldOutputTypes['public']['Meal']['tags'];
     updatedAt: FieldOutputTypes['public']['Meal']['updatedAt'];
@@ -375,7 +376,9 @@ export namespace Models {
     data: FieldOutputTypes['public']['MealPhoto']['data'];
     householdId: FieldOutputTypes['public']['MealPhoto']['householdId'];
     id: FieldOutputTypes['public']['MealPhoto']['id'];
+    kind: FieldOutputTypes['public']['MealPhoto']['kind'];
     mealId: FieldOutputTypes['public']['MealPhoto']['mealId'];
+    readStatus: FieldOutputTypes['public']['MealPhoto']['readStatus'];
     meal: public_Meal;
     readonly [RelationKeys]?: 'meal';
   };
@@ -747,6 +750,12 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly recipeText: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
                 readonly recipeUrl: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
@@ -836,10 +845,26 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
+                readonly kind: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'meal'>;
+                  };
+                  readonly many: false;
+                };
                 readonly mealId: {
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
                   readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly readStatus: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                   readonly many: false;
                 };
               };
@@ -1269,6 +1294,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly recipeText: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly recipeUrl: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -1344,6 +1373,7 @@ type ContractBase = Omit<
                 readonly householdId: { readonly column: 'householdId' };
                 readonly id: { readonly column: 'id' };
                 readonly name: { readonly column: 'name' };
+                readonly recipeText: { readonly column: 'recipeText' };
                 readonly recipeUrl: { readonly column: 'recipeUrl' };
                 readonly tags: { readonly column: 'tags' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
@@ -1376,9 +1406,17 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly kind: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly mealId: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly readStatus: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
             };
             readonly relations: {
@@ -1401,7 +1439,9 @@ type ContractBase = Omit<
                 readonly data: { readonly column: 'data' };
                 readonly householdId: { readonly column: 'householdId' };
                 readonly id: { readonly column: 'id' };
+                readonly kind: { readonly column: 'kind' };
                 readonly mealId: { readonly column: 'mealId' };
+                readonly readStatus: { readonly column: 'readStatus' };
               };
             };
           };

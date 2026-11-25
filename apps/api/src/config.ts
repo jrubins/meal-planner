@@ -54,6 +54,13 @@ const EnvSchema = z
      */
     AUTH_TEST_SECRET: z.preprocess(emptyToUndefined, z.string().min(32).optional()),
 
+    // --- Claude (reading recipe photos) ---------------------------------------------------
+    /**
+     * Anthropic API key: Claude reads recipe photos into text. Optional: without it, recipe
+     * photos are kept but not read.
+     */
+    ANTHROPIC_API_KEY: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+
     // --- Monitoring ------------------------------------------------------------------------
     SENTRY_DSN: z.preprocess(emptyToUndefined, z.url().optional()),
     SENTRY_ENVIRONMENT: z.preprocess(emptyToUndefined, z.string().optional()),

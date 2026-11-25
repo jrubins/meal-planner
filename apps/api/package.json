@@ -12,6 +12,7 @@
     "build": "node scripts/build-vercel.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.13.0",
     "@app/db": "workspace:*",
     "@app/shared": "workspace:*",
     "@modelcontextprotocol/express": "2.0.2",
