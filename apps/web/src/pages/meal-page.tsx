@@ -72,149 +72,154 @@ export function MealPage({ mealId }: { mealId: number }) {
         All meals
       </Link>
 
-      <div className="bg-card overflow-hidden rounded-xl border shadow-xs">
-        {selected ? (
-          <div className="relative">
-            <img
-              src={apiUrl(selected.path)}
-              alt={meal.name}
-              className="bg-muted aspect-[4/3] w-full object-cover sm:aspect-[16/9]"
-            />
-            <Button
-              variant="secondary"
-              size="icon"
-              className="absolute top-2 right-2 opacity-90"
-              aria-label="Delete this photo"
-              disabled={deletePhoto.isPending}
-              onClick={() => {
-                setSelectedPhotoId(null);
-                deletePhoto.mutate(selected.id);
-              }}
-            >
-              <Trash2 />
-            </Button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => fileInput.current?.click()}
-            className="bg-secondary text-muted-foreground hover:text-foreground flex aspect-[16/9] w-full flex-col items-center justify-center gap-2"
-          >
-            <Camera className="size-8" strokeWidth={1.5} aria-hidden />
-            <span className="text-sm">Add a photo of the dish</span>
-          </button>
-        )}
-        {dishPhotos.length > 0 ? (
-          <div className="flex gap-2 overflow-x-auto p-2">
-            {dishPhotos.map((photo) => (
+      {/* Two columns on wide screens: photos and details (kept in view), then the recipe. */}
+      <div className="space-y-5 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8 lg:space-y-0">
+        <div className="space-y-5 lg:sticky lg:top-6">
+          <div className="bg-card overflow-hidden rounded-xl border shadow-xs">
+            {selected ? (
+              <div className="relative">
+                <img
+                  src={apiUrl(selected.path)}
+                  alt={meal.name}
+                  className="bg-muted aspect-[4/3] w-full object-cover sm:aspect-[16/9]"
+                />
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute top-2 right-2 opacity-90"
+                  aria-label="Delete this photo"
+                  disabled={deletePhoto.isPending}
+                  onClick={() => {
+                    setSelectedPhotoId(null);
+                    deletePhoto.mutate(selected.id);
+                  }}
+                >
+                  <Trash2 />
+                </Button>
+              </div>
+            ) : (
               <button
-                key={photo.id}
                 type="button"
-                aria-label="Show photo"
-                aria-pressed={photo.id === selected?.id}
-                onClick={() => setSelectedPhotoId(photo.id)}
-                className={cn(
-                  'shrink-0 rounded-lg ring-offset-2 outline-none',
-                  photo.id === selected?.id && 'ring-primary ring-2',
-                )}
+                onClick={() => fileInput.current?.click()}
+                className="bg-secondary text-muted-foreground hover:text-foreground flex aspect-[16/9] w-full flex-col items-center justify-center gap-2"
               >
-                <MealThumb path={photo.path} className="size-14" />
+                <Camera className="size-8" strokeWidth={1.5} aria-hidden />
+                <span className="text-sm">Add a photo of the dish</span>
               </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => fileInput.current?.click()}
-              className="bg-secondary text-muted-foreground hover:text-foreground flex size-14 shrink-0 items-center justify-center rounded-lg"
-              aria-label="Add photos"
-            >
-              <Camera className="size-5" aria-hidden />
-            </button>
+            )}
+            {dishPhotos.length > 0 ? (
+              <div className="flex gap-2 overflow-x-auto p-2">
+                {dishPhotos.map((photo) => (
+                  <button
+                    key={photo.id}
+                    type="button"
+                    aria-label="Show photo"
+                    aria-pressed={photo.id === selected?.id}
+                    onClick={() => setSelectedPhotoId(photo.id)}
+                    className={cn(
+                      'shrink-0 rounded-lg ring-offset-2 outline-none',
+                      photo.id === selected?.id && 'ring-primary ring-2',
+                    )}
+                  >
+                    <MealThumb path={photo.path} className="size-14" />
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => fileInput.current?.click()}
+                  className="bg-secondary text-muted-foreground hover:text-foreground flex size-14 shrink-0 items-center justify-center rounded-lg"
+                  aria-label="Add photos"
+                >
+                  <Camera className="size-5" aria-hidden />
+                </button>
+              </div>
+            ) : null}
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/*"
+              multiple
+              className="sr-only"
+              aria-label="Upload photos of the dish"
+              onChange={(event) => {
+                void upload(Array.from(event.target.files ?? []), 'meal');
+                event.target.value = '';
+              }}
+            />
           </div>
-        ) : null}
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/*"
-          multiple
-          className="sr-only"
-          aria-label="Upload photos of the dish"
-          onChange={(event) => {
-            void upload(Array.from(event.target.files ?? []), 'meal');
-            event.target.value = '';
-          }}
+          {uploadPhoto.isPending ? (
+            <p role="status" className="text-muted-foreground text-sm">
+              Uploading…
+            </p>
+          ) : null}
+          {uploadError ? (
+            <p role="alert" className="text-destructive text-sm">
+              {uploadError}
+            </p>
+          ) : null}
+
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-3xl font-semibold">{meal.name}</h1>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {meal.timesEaten === 0
+                  ? 'Not had yet'
+                  : `Had ${meal.timesEaten === 1 ? 'once' : `${meal.timesEaten} times`}, last ${lastEaten(meal.lastEatenOn, household.today)}${meal.lastEatenOn ? ` (${monthDay(meal.lastEatenOn)})` : ''}`}
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-1">
+              <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                <Pencil />
+                Edit
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Delete meal"
+                onClick={() => setConfirmingDelete(true)}
+              >
+                <Trash2 />
+              </Button>
+            </div>
+          </div>
+
+          {meal.tags.length > 0 ? (
+            <ul className="flex flex-wrap gap-1.5" aria-label="Tags">
+              {meal.tags.map((tag) => (
+                <li key={tag} className="bg-secondary rounded-full px-3 py-1 text-xs">
+                  {tag}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {meal.description ? (
+            <p className="leading-relaxed whitespace-pre-line">{meal.description}</p>
+          ) : null}
+
+          {meal.recipeUrl ? (
+            <a
+              href={meal.recipeUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-primary inline-flex items-center gap-1.5 font-medium hover:underline"
+            >
+              <ExternalLink className="size-4" aria-hidden />
+              Open the recipe link
+            </a>
+          ) : null}
+        </div>
+
+        <RecipeSection
+          recipe={meal.recipe}
+          photos={recipePhotos}
+          uploading={uploadPhoto.isPending}
+          onAddPhotos={(files) => void upload(files, 'recipe')}
+          onReread={(photoId) => rereadPhoto.mutate(photoId)}
+          onDeletePhoto={(photoId) => deletePhoto.mutate(photoId)}
+          onEdit={() => setEditingRecipe(true)}
         />
       </div>
-      {uploadPhoto.isPending ? (
-        <p role="status" className="text-muted-foreground text-sm">
-          Uploading…
-        </p>
-      ) : null}
-      {uploadError ? (
-        <p role="alert" className="text-destructive text-sm">
-          {uploadError}
-        </p>
-      ) : null}
-
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-3xl font-semibold">{meal.name}</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {meal.timesEaten === 0
-              ? 'Not had yet'
-              : `Had ${meal.timesEaten === 1 ? 'once' : `${meal.timesEaten} times`}, last ${lastEaten(meal.lastEatenOn, household.today)}${meal.lastEatenOn ? ` (${monthDay(meal.lastEatenOn)})` : ''}`}
-          </p>
-        </div>
-        <div className="flex shrink-0 gap-1">
-          <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-            <Pencil />
-            Edit
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Delete meal"
-            onClick={() => setConfirmingDelete(true)}
-          >
-            <Trash2 />
-          </Button>
-        </div>
-      </div>
-
-      {meal.tags.length > 0 ? (
-        <ul className="flex flex-wrap gap-1.5" aria-label="Tags">
-          {meal.tags.map((tag) => (
-            <li key={tag} className="bg-secondary rounded-full px-3 py-1 text-xs">
-              {tag}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {meal.description ? (
-        <p className="leading-relaxed whitespace-pre-line">{meal.description}</p>
-      ) : null}
-
-      {meal.recipeUrl ? (
-        <a
-          href={meal.recipeUrl}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="text-primary inline-flex items-center gap-1.5 font-medium hover:underline"
-        >
-          <ExternalLink className="size-4" aria-hidden />
-          Open the recipe link
-        </a>
-      ) : null}
-
-      <RecipeSection
-        recipe={meal.recipe}
-        photos={recipePhotos}
-        uploading={uploadPhoto.isPending}
-        onAddPhotos={(files) => void upload(files, 'recipe')}
-        onReread={(photoId) => rereadPhoto.mutate(photoId)}
-        onDeletePhoto={(photoId) => deletePhoto.mutate(photoId)}
-        onEdit={() => setEditingRecipe(true)}
-      />
 
       <Dialog open={editingRecipe} onOpenChange={setEditingRecipe}>
         <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-xl">

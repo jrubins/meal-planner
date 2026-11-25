@@ -26,11 +26,13 @@ export function OptionRow({ option, me, members, onVote, onChoose, onRemove }: O
   return (
     <li
       className={cn(
-        'flex items-center gap-2.5 rounded-lg px-2 py-1.5',
+        // On a narrow card (a desktop board column) the name takes the full width and the
+        // buttons wrap onto their own line.
+        'flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-lg px-2 py-1.5',
         option.chosen && 'bg-accent text-accent-foreground',
       )}
     >
-      <MealThumb path={option.meal.coverPhotoPath} className="size-9" />
+      <MealThumb path={option.meal.coverPhotoPath} className="size-9 @max-xs:hidden" />
       <div className="min-w-0 flex-1">
         <p className="line-clamp-2 text-sm leading-snug font-medium">
           {option.meal.name}
@@ -51,12 +53,12 @@ export function OptionRow({ option, me, members, onVote, onChoose, onRemove }: O
           </p>
         ) : null}
       </div>
-      <div className="flex shrink-0 items-center gap-0.5">
+      <div className="flex shrink-0 items-center gap-0.5 @max-xs:w-full @max-xs:justify-between @max-xs:gap-0">
         <Button
           variant="ghost"
           size="icon"
           className={cn(
-            'size-8',
+            'size-8 @max-xs:size-7',
             myVote === 'up' && 'bg-vote-up/15 text-vote-up hover:bg-vote-up/25 hover:text-vote-up',
           )}
           aria-label={`Thumbs up for ${option.meal.name}`}
@@ -69,7 +71,7 @@ export function OptionRow({ option, me, members, onVote, onChoose, onRemove }: O
           variant="ghost"
           size="icon"
           className={cn(
-            'size-8',
+            'size-8 @max-xs:size-7',
             myVote === 'down' &&
               'bg-vote-down/15 text-vote-down hover:bg-vote-down/25 hover:text-vote-down',
           )}
@@ -88,7 +90,7 @@ export function OptionRow({ option, me, members, onVote, onChoose, onRemove }: O
           <Button
             variant="outline"
             size="sm"
-            className="h-8"
+            className="h-8 @max-xs:h-7 @max-xs:px-2"
             aria-label={`Pick ${option.meal.name}`}
             onClick={onChoose}
           >
@@ -98,7 +100,7 @@ export function OptionRow({ option, me, members, onVote, onChoose, onRemove }: O
         <Button
           variant="ghost"
           size="icon"
-          className="text-muted-foreground size-8"
+          className="text-muted-foreground size-8 @max-xs:size-7"
           aria-label={`Remove option ${option.meal.name}`}
           onClick={onRemove}
         >

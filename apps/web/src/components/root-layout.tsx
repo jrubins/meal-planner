@@ -15,7 +15,7 @@ const navLink =
 export function RootLayout() {
   const { user, signOut } = useSession();
   return (
-    <div className="mx-auto min-h-screen max-w-2xl px-4 pt-5 pb-12">
+    <div className="mx-auto min-h-screen max-w-[90rem] px-4 pt-5 pb-12 lg:px-8">
       <header className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
         <Link to="/" search={{}} className="flex items-center gap-2">
           <img src="/favicon.svg" alt="" className="size-7" />
