@@ -12,7 +12,15 @@ interface Draft {
   servings: string;
   prepTime: string;
   cookTime: string;
-  ingredients: { key: number; section: string; amount: string; item: string; note: string }[];
+  ingredients: {
+    key: number;
+    section: string;
+    amount: string;
+    item: string;
+    note: string;
+    /** Not edited here (the recipe card toggles it), but kept on save. */
+    excluded: boolean;
+  }[];
   steps: { key: number; text: string }[];
   notes: string;
 }
@@ -32,6 +40,7 @@ function toDraft(recipe: Recipe | null): Draft {
       amount: i.amount ?? '',
       item: i.item,
       note: i.note ?? '',
+      excluded: i.excluded,
     })),
     steps: (recipe?.steps ?? []).map((text) => ({ key: key(), text })),
     notes: recipe?.notes ?? '',
@@ -86,6 +95,7 @@ export function RecipeEditor({ recipe, onSave, onCancel }: RecipeEditorProps) {
           amount: row.amount,
           item: row.item,
           note: row.note,
+          excluded: row.excluded,
         })),
       steps: draft.steps.map((step) => step.text).filter((text) => text.trim()),
     });
@@ -94,9 +104,14 @@ export function RecipeEditor({ recipe, onSave, onCancel }: RecipeEditorProps) {
       return;
     }
     setError(null);
+    // Steps adjusted for left-out ingredients stay only while the original steps are unchanged.
+    const stepsUnchanged =
+      recipe !== null &&
+      parsed.data.steps.length === recipe.steps.length &&
+      parsed.data.steps.every((step, i) => step === recipe.steps[i]);
     setSaving(true);
     try {
-      await onSave(parsed.data);
+      await onSave({ ...parsed.data, adjustedSteps: stepsUnchanged ? recipe.adjustedSteps : null });
     } finally {
       setSaving(false);
     }
@@ -205,6 +220,7 @@ export function RecipeEditor({ recipe, onSave, onCancel }: RecipeEditorProps) {
                 amount: '',
                 item: '',
                 note: '',
+                excluded: false,
               },
             ])
           }

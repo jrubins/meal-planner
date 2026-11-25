@@ -4,8 +4,9 @@ import {
   daysBetween,
   EMPTY_RECIPE,
   isEmptyRecipe,
+  leftOutIngredients,
   mergeRecipes,
-  RecipeSchema,
+  RecipeInputSchema,
   recipeText,
   PhotoContentTypeSchema,
   PhotoKindSchema,
@@ -33,8 +34,8 @@ export interface RecipeReading {
   reader: RecipeReader | null;
   /** Runs work after the response is sent (Vercel's waitUntil in production). */
   background: (task: Promise<void>) => void;
-  /** Reports a failed reading (logged and sent to Sentry by the caller). */
-  onError: (error: unknown, context: { mealId: number; photoId: number }) => void;
+  /** Reports a failed AI call (logged and sent to Sentry by the caller). */
+  onError: (error: unknown, context: { mealId: number; photoId?: number }) => void;
 }
 
 type MealRow = {
@@ -66,7 +67,9 @@ const toMealPhoto = (photo: StoredPhoto): MealPhoto => ({
  */
 function toRecipe(meal: Pick<MealRow, 'recipe' | 'recipeText'>): Recipe | null {
   if (meal.recipe != null) {
-    const parsed = RecipeSchema.safeParse(meal.recipe);
+    // Read with the input schema, which fills in fields added since a recipe was stored
+    // (e.g. `excluded`, `adjustedSteps`).
+    const parsed = RecipeInputSchema.safeParse(meal.recipe);
     if (parsed.success) return parsed.data;
   }
   return meal.recipeText?.trim() ? { ...EMPTY_RECIPE, notes: meal.recipeText.trim() } : null;
@@ -313,6 +316,57 @@ export function createMealsService(
       if (Object.keys(changes).length > 0) {
         await Meals.where({ id, householdId: household.id }).update(changes);
       }
+      return this.get(userId, id);
+    },
+
+    /**
+     * Rewrites the recipe's steps to leave out its excluded ingredients, keeping the original
+     * steps: the adjusted ones are stored beside them with the ingredients they're for.
+     */
+    async adjustSteps(userId: string, id: number): Promise<Meal> {
+      const household = await households.context(userId);
+      const meal = await Meals.where({ id, householdId: household.id })
+        .select('recipe', 'recipeText', 'updatedAt')
+        .first();
+      if (!meal) throw notFound(`Meal ${id} not found`);
+      const recipe = toRecipe(meal);
+      const leftOut = recipe ? leftOutIngredients(recipe) : [];
+      if (!recipe || leftOut.length === 0) {
+        throw new HttpError(400, 'nothing_left_out', 'Leave out at least one ingredient first');
+      }
+      if (recipe.steps.length === 0) {
+        throw new HttpError(400, 'no_steps', 'This recipe has no steps to adjust');
+      }
+      if (!recipes.reader) {
+        throw new HttpError(503, 'ai_unavailable', 'Adjusting recipes isn’t set up');
+      }
+
+      let steps: string[];
+      try {
+        steps = await recipes.reader.adjustSteps(recipe);
+      } catch (error) {
+        recipes.onError(error, { mealId: id });
+        throw new HttpError(502, 'ai_failed', 'Couldn’t adjust the steps. Try again.');
+      }
+      if (steps.length === 0) {
+        throw new HttpError(502, 'ai_failed', 'Couldn’t adjust the steps. Try again.');
+      }
+
+      // Only if nothing changed meanwhile (e.g. another ingredient was left out).
+      const updated = await Meals.where({ id, householdId: household.id })
+        .where((m) => m.updatedAt.eq(meal.updatedAt))
+        .updateAndCount({
+          recipe: { ...recipe, adjustedSteps: { steps, leftOut } },
+          recipeText: null,
+        });
+      if (updated === 0) {
+        throw new HttpError(
+          409,
+          'recipe_changed',
+          'The recipe changed while adjusting. Try again.',
+        );
+      }
+      Sentry.metrics.count('meals.steps_adjusted', 1);
       return this.get(userId, id);
     },
 

@@ -9,11 +9,14 @@ import { z } from 'zod';
 export type RecipeReading = { isRecipe: true; recipe: Recipe } | { isRecipe: false };
 
 /**
- * Reads a recipe from a photo (a cookbook page, a recipe card, a screenshot). The meals
- * service depends on this interface, so tests pass a fake and nothing calls a model there.
+ * The AI work on recipes: reading one from a photo (a cookbook page, a recipe card, a
+ * screenshot), and rewriting its steps to leave out ingredients. The meals service depends
+ * on this interface, so tests pass a fake and nothing calls a model there.
  */
 export interface RecipeReader {
   read(image: { contentType: PhotoContentType; data: Uint8Array }): Promise<RecipeReading>;
+  /** The recipe's steps rewritten without its excluded ingredients. */
+  adjustSteps(recipe: Recipe): Promise<string[]>;
 }
 
 /** The AI providers recipe photos can be read with (TanStack AI adapters). */
@@ -59,6 +62,35 @@ Transcribe the recipe into the structured fields so the household can read it la
 If the photo shows only part of a recipe (for example the second page), transcribe that part. If part of the page is cut off or unreadable, transcribe what you can and write "[unreadable]" where text is missing.
 
 If the photo does not show a recipe, set is_recipe to false and leave the other fields empty.`;
+
+const AdjustedStepsOutput = z.object({
+  steps: z
+    .array(z.string())
+    .meta({ description: 'The rewritten steps, in order, without numbers' }),
+});
+
+function adjustInstructions(recipe: Recipe): string {
+  const ingredient = (i: Recipe['ingredients'][number]) =>
+    [i.amount, i.item, i.note ? `(${i.note})` : null].filter(Boolean).join(' ');
+  const used = recipe.ingredients.filter((i) => !i.excluded).map(ingredient);
+  const leftOut = recipe.ingredients.filter((i) => i.excluded).map(ingredient);
+  return `A household cooks this recipe but always leaves some ingredients out. Rewrite the steps so they make sense without the left-out ingredients.
+
+- Remove mentions of the left-out ingredients, and drop any step that only dealt with them.
+- Keep every other step's wording, quantities, times and temperatures exactly as written. Don't add tips, substitutes or new steps, and don't change the order.
+- If leaving something out changes what another step must do (for example, nothing is left to drain), adjust that step minimally.
+
+Recipe: ${recipe.title ?? 'untitled'}
+
+Ingredients used:
+${used.map((i) => `- ${i}`).join('\n') || '- (none listed)'}
+
+Ingredients left out:
+${leftOut.map((i) => `- ${i}`).join('\n')}
+
+Steps:
+${recipe.steps.map((step, n) => `${n + 1}. ${step}`).join('\n')}`;
+}
 
 export interface AiConfig {
   provider: AiProvider;
@@ -137,6 +169,16 @@ export function createRecipeReader({ provider, model, apiKey }: AiConfig): Recip
         notes: reading.notes,
       });
       return isEmptyRecipe(recipe) ? { isRecipe: false } : { isRecipe: true, recipe };
+    },
+
+    async adjustSteps(recipe) {
+      const { steps } = await chat({
+        adapter,
+        threadId: `adjust-${crypto.randomUUID()}`,
+        messages: [{ role: 'user', content: adjustInstructions(recipe) }],
+        outputSchema: AdjustedStepsOutput,
+      });
+      return steps.map((step) => step.trim()).filter(Boolean);
     },
   };
 }

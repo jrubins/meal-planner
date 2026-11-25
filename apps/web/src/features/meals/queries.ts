@@ -87,6 +87,15 @@ export function useUploadPhoto(mealId: number) {
   });
 }
 
+/** Rewrites the recipe's steps to leave out its excluded ingredients. */
+export function useAdjustSteps(mealId: number) {
+  const invalidate = useInvalidateMeals();
+  return useMutation({
+    mutationFn: () => apiRequest(`/meals/${mealId}/recipe/adjust`, MealSchema, { method: 'POST' }),
+    onSuccess: invalidate,
+  });
+}
+
 /** Reads a recipe photo again (after a failed reading). */
 export function useRereadPhoto(mealId: number) {
   const invalidate = useInvalidateMeals();

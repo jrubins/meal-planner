@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY_RECIPE, groupIngredients, mergeRecipes, RecipeInputSchema } from './recipes.ts';
+import {
+  currentAdjustedSteps,
+  EMPTY_RECIPE,
+  groupIngredients,
+  mergeRecipes,
+  RecipeInputSchema,
+} from './recipes.ts';
 
 const recipe = (input: object) => RecipeInputSchema.parse(input);
 
@@ -23,8 +29,8 @@ describe('recipes', () => {
       title: 'Lasagne',
       servings: '6',
       ingredients: [
-        { section: null, amount: null, item: 'pasta', note: null },
-        { section: null, amount: null, item: 'cheese', note: null },
+        { section: null, amount: null, item: 'pasta', note: null, excluded: false },
+        { section: null, amount: null, item: 'cheese', note: null, excluded: false },
       ],
       steps: ['Boil.', 'Bake.'],
       notes: 'Freezes well.\n\nUse a deep dish.',
@@ -46,5 +52,18 @@ describe('recipes', () => {
       ['Sauce', 1],
       [null, 1],
     ]);
+  });
+
+  it('uses adjusted steps only for exactly the ingredients left out', () => {
+    const base = recipe({
+      ingredients: [{ item: 'cream', excluded: true }, { item: 'butter' }],
+      steps: ['Add cream.', 'Add butter.'],
+      adjustedSteps: { steps: ['Add butter.'], leftOut: ['cream'] },
+    });
+    expect(currentAdjustedSteps(base)).toEqual(['Add butter.']);
+    const more = { ...base, ingredients: base.ingredients.map((i) => ({ ...i, excluded: true })) };
+    expect(currentAdjustedSteps(more)).toBeNull();
+    const none = { ...base, ingredients: base.ingredients.map((i) => ({ ...i, excluded: false })) };
+    expect(currentAdjustedSteps(none)).toBeNull();
   });
 });

@@ -54,6 +54,7 @@ describe('MCP endpoint', () => {
         'shuffle_week',
         'list_meals',
         'create_meal',
+        'adjust_recipe_steps',
       ]),
     );
     expect(client.getInstructions()).toContain('YYYY-MM-DD');
@@ -160,7 +161,13 @@ describe('MCP endpoint', () => {
               servings: '4',
               ingredients: [
                 { section: 'Marinade', amount: '200 g', item: 'yogurt' },
-                { section: 'Sauce', amount: '1 tbsp', item: 'garam masala', note: 'toasted' },
+                {
+                  section: 'Sauce',
+                  amount: '1 tbsp',
+                  item: 'garam masala',
+                  note: 'toasted',
+                  excluded: false,
+                },
               ],
               steps: ['Marinate overnight.', 'Simmer for 15 minutes.'],
             },
@@ -179,6 +186,7 @@ describe('MCP endpoint', () => {
       amount: '1 tbsp',
       item: 'garam masala',
       note: 'toasted',
+      excluded: false,
     });
     await client.close();
   });

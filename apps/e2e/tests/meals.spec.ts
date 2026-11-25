@@ -1,3 +1,4 @@
+import { MealSchema } from '@app/shared';
 import { createMeal } from './helpers.ts';
 import { expect, test, unique } from './fixtures.ts';
 
@@ -72,6 +73,35 @@ test.describe('meals', () => {
     await expect(recipe.getByText('chicken thighs')).toBeVisible();
     await expect(recipe.getByText('Marinate overnight.')).toBeVisible();
     await capture('meal-recipe');
+  });
+
+  test('leaves an ingredient out, and keeps it left out', async ({ page, api, capture }) => {
+    const res = await api.post('/meals', {
+      data: {
+        name: unique('Tikka masala'),
+        recipe: {
+          ingredients: [
+            { amount: '600 g', item: 'chicken thighs' },
+            { amount: '150 ml', item: 'double cream' },
+          ],
+          steps: ['Brown the chicken.', 'Stir in the cream.'],
+        },
+      },
+    });
+    const meal = MealSchema.parse(await res.json());
+    await page.goto(`/meals/${meal.id}`);
+    const recipe = page.getByRole('region', { name: 'Recipe' });
+
+    await recipe.getByRole('button', { name: 'Leave out double cream' }).click();
+
+    await expect(recipe.getByRole('button', { name: 'Include double cream' })).toBeVisible();
+    await expect(recipe.getByText(/Leaving out double cream/)).toBeVisible();
+    await expect(recipe.getByRole('button', { name: 'Adjust steps' })).toBeVisible();
+    await capture('meal-left-out');
+
+    // Saved with the meal: still left out after a reload.
+    await page.reload();
+    await expect(recipe.getByRole('button', { name: 'Include double cream' })).toBeVisible();
   });
 
   test('searches and filters the library', async ({ page, api, capture }) => {

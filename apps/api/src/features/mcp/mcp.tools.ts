@@ -33,7 +33,7 @@ const INSTRUCTIONS = `Dinner planner for a household (usually a couple) who plan
 - Dates are calendar dates (YYYY-MM-DD) in the household's time zone. Call get_household or get_week first to learn today's date and the week's dates; never guess them.
 - Meals can be referred to by mealId or by exact name (mealName, case-insensitive). A meal must exist before it is planned: if a name is not found, offer to create it with create_meal.
 - For inspiration, suggest_meals favours meals not eaten recently and skips ones already in the week; shuffle_week adds suggested options to every empty night for the household to vote on.
-- A meal can carry its recipe, structured: title, servings, prep and cook times, ingredients (section, amount as written, item, note), steps and notes. It is read automatically from recipe photos uploaded in the web app, or set with create_meal / update_meal. Use get_meal to answer questions about ingredients or steps, and to build shopping lists for the week. Keep amounts as written ("2 tbsp", "a pinch").
+- A meal can carry its recipe, structured: title, servings, prep and cook times, ingredients (section, amount as written, item, note, excluded), steps and notes. Ingredients marked excluded are ones this household always leaves out: leave them off shopping lists. When adjustedSteps is set and its leftOut matches the excluded ingredients, those are the steps they cook from; adjust_recipe_steps rewrites them after exclusions change. It is read automatically from recipe photos uploaded in the web app, or set with create_meal / update_meal. Use get_meal to answer questions about ingredients or steps, and to build shopping lists for the week. Keep amounts as written ("2 tbsp", "a pinch").
 - Photos (of the dish or of its recipe) are added in the web app, not here.`;
 
 const mealRef = {
@@ -316,6 +316,18 @@ export function createMcpServer(services: McpServices, userId: string): McpServe
       outputSchema: MealSchema,
     },
     async ({ mealId, ...input }) => json(await meals.update(userId, mealId, input)),
+  );
+
+  server.registerTool(
+    'adjust_recipe_steps',
+    {
+      title: 'Adjust recipe steps',
+      description:
+        "Rewrite a meal's recipe steps to leave out its excluded ingredients (mark them excluded with update_meal first). The original steps are kept; the adjusted ones are stored in recipe.adjustedSteps.",
+      inputSchema: z.object({ mealId: z.number().int().positive() }),
+      outputSchema: MealSchema,
+    },
+    async ({ mealId }) => json(await meals.adjustSteps(userId, mealId)),
   );
 
   server.registerTool(
