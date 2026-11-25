@@ -31,7 +31,7 @@ options you're deciding between, and your meal library with photos.
   (`apps/api/src/features/meals/image-generator.ts`).
 - **Inspiration:** suggestions favour meals you haven't had for a while and skip ones already in
   the week. **Shuffle** suggests one meal for a night; **Fill empty nights** adds two options to
-  every unplanned night, ready to vote on. **Surprise me** on the Meals page picks one at random.
+  every unplanned night, ready to vote on.
 - **Households:** each person signs in separately and belongs to one household. Share the
   invite code on the Household page and the other person joins it, bringing their meals along.
 

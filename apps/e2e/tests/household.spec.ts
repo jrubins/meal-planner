@@ -35,7 +35,10 @@ test.describe('household', () => {
     await page.getByRole('button', { name: 'Join' }).click();
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(theirs.name);
-    await expect(page.getByText(/Sam & Alex|Alex & Sam/)).toBeVisible();
+    const members = page.getByRole('list', { name: 'Members' }).getByRole('listitem');
+    await expect(members).toHaveCount(2);
+    await expect(members.filter({ hasText: 'Sam' })).toBeVisible();
+    await expect(members.filter({ hasText: 'Alex' })).toContainText('You');
     await expect(page.getByLabel('Your invite code')).toHaveText(theirs.inviteCode);
     await capture('household');
 

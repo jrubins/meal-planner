@@ -180,11 +180,4 @@ test.describe('meals', () => {
     await expect(page.getByText(pie.name)).toBeVisible();
     await expect(page.getByText(soup.name)).toHaveCount(0);
   });
-
-  test('suggests a meal with "Surprise me"', async ({ page, api }) => {
-    const meal = await createMeal(api, unique('Surprise'));
-    await page.goto('/meals');
-    await page.getByRole('button', { name: 'Surprise me' }).click();
-    await expect(page.getByRole('status')).toContainText(meal.name);
-  });
 });
